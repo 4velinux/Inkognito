@@ -43,15 +43,17 @@ CT_VLAN="${CT_VLAN:-}"
 CHANNEL="${CHANNEL:-release}"
 AUTO_UPDATE="${AUTO_UPDATE:-yes}"
 
-BL=$'\e[38;5;69m'; GN=$'\e[32m'; RD=$'\e[31m'; YW=$'\e[33m'; DIM=$'\e[2m'; CL=$'\e[0m'
+if [ -t 1 ]; then BL=$'\e[38;5;69m'; GN=$'\e[32m'; RD=$'\e[31m'; YW=$'\e[33m'; DIM=$'\e[2m'; CL=$'\e[0m'; else BL=""; GN=""; RD=""; YW=""; DIM=""; CL=""; fi
 msg()  { printf ' %s›%s %s\n' "$BL" "$CL" "$*"; }
 ok()   { printf ' %s✓%s %s\n' "$GN" "$CL" "$*"; }
 warn() { printf ' %s!%s %s\n' "$YW" "$CL" "$*"; }
 die()  { printf ' %s✗%s %s\n' "$RD" "$CL" "$*" >&2; exit 1; }
 
 CREATED=""
+REPORTED=""
 on_error() {
   local line=$1
+  [ -n "$REPORTED" ] && return; REPORTED=1
   printf '\n %s✗ Failed at line %s.%s\n' "$RD" "$line" "$CL" >&2
   if [ -n "$CREATED" ]; then
     printf '   Container %s was created. Remove it with:  pct stop %s; pct destroy %s\n' "$CREATED" "$CREATED" "$CREATED" >&2
@@ -105,7 +107,7 @@ fi
 # --- template --------------------------------------------------------------
 msg "Looking for the newest Alpine template"
 pveam update >/dev/null 2>&1 || warn "Could not refresh the template list, using the cached one."
-TEMPLATE="$(pveam available --section system | awk '{print $2}' | grep -E '^alpine-3\.[0-9]+-default_' | sort -V | tail -n1)"
+TEMPLATE="$(pveam available --section system | awk '{print $2}' | grep -E '^alpine-3\.[0-9]+-default_' | sort -V | tail -n1 || true)"
 [ -n "$TEMPLATE" ] || die "No Alpine template found in 'pveam available'."
 if ! pveam list "$TPL_STORAGE" | grep -q "$TEMPLATE"; then
   msg "Downloading $TEMPLATE"

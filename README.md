@@ -2,12 +2,12 @@
 
 # Inkognito
 
-**The privacy-first LinkedIn post formatter.**
-Bold, italic, 22 letter styles, live desktop and mobile feed previews, and a voice checker that catches personal data before you post.
-Everything runs in your browser. Nothing is sent anywhere.
+**A locally launched, privacy-first LinkedIn formatter for self-hosting.**
+Your data, your thoughts are yours to keep on your own machine. Works on Windows, Linux and Mac.
 
 [![Privacy check](https://github.com/4velinux/inkognito/actions/workflows/ci.yml/badge.svg)](https://github.com/4velinux/inkognito/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/4velinux/inkognito?label=release&color=3F51B5)](https://github.com/4velinux/inkognito/releases/latest)
+[![Platforms](https://img.shields.io/badge/runs%20on-Windows%20·%20macOS%20·%20Linux%20·%20Proxmox-9C27B0)](#install)
 [![License: MIT](https://img.shields.io/badge/license-MIT-673AB7)](LICENSE)
 
 <img src="docs/screenshot.png" alt="Inkognito editor with toolbar, character meter, LinkedIn feed preview and voice check" width="900">
@@ -18,7 +18,7 @@ Everything runs in your browser. Nothing is sent anywhere.
 
 Every popular LinkedIn formatter is a web page on someone else's server. Your unpublished drafts, client names and half-finished opinions pass through it, next to analytics and ad scripts.
 
-Inkognito is a single HTML file. Open it from your disk, or host it on your own Proxmox box or Docker. A strict Content Security Policy blocks every outbound connection, so even a bug could not leak your text. The footer shows a live count of network requests, and it stays at zero.
+Inkognito is a single HTML file. Launch it on your own computer with one command, open it straight from disk, or host it on your Proxmox box or Docker. A strict Content Security Policy blocks every outbound connection, so even a bug could not leak your text. The footer shows a live count of network requests, and it stays at zero.
 
 ## Features
 
@@ -42,17 +42,45 @@ Inkognito is a single HTML file. Open it from your disk, or host it on your own 
 **Drafts**
 - Unlimited drafts saved in your browser, templates, export and import as JSON, one-click erase of all local data.
 
-## Quick start
+## Install
 
-Download [`inkognito.html`](https://github.com/4velinux/inkognito/releases/latest/download/inkognito.html) and double-click it. That's it.
+One installer per platform. It figures out where it is running and does the right thing.
+
+| Where | Run this | What you get |
+|---|---|---|
+| **Windows** (PowerShell) | `irm https://raw.githubusercontent.com/4velinux/inkognito/main/install.ps1 \| iex` | App in `%LOCALAPPDATA%\Inkognito`, a Start menu entry, served on `http://localhost:8765`, browser opens |
+| **macOS / Linux** (Terminal) | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/4velinux/inkognito/main/install.sh)"` | App in your user folder, an `inkognito` command, served on `http://localhost:8765`, browser opens |
+| **Proxmox VE** (host shell) | the same `install.sh` line | Detects Proxmox and acts as a helper script: creates a tiny Alpine LXC for your whole network |
+| **No install** | download [`inkognito.html`](https://github.com/4velinux/inkognito/releases/latest/download/inkognito.html) and double-click it | Works the same, straight from disk |
+
+No admin rights, no package manager, nothing to compile. On macOS and Linux the local server uses the Python 3 that is already on most systems (Ruby as a fallback). If neither exists, Inkognito simply opens from disk.
+
+### Everyday use
+
+| | macOS / Linux | Windows |
+|---|---|---|
+| Open | `inkognito` | Start menu → Inkognito |
+| Stop | `inkognito --stop` | `& "$env:LOCALAPPDATA\Inkognito\inkognito.ps1" -Stop` |
+| Start at login | `inkognito --autostart on` | `... inkognito.ps1 -Autostart on` |
+| Update | `inkognito --update` | `... inkognito.ps1 -Update` |
+| Status | `inkognito --status` | `... inkognito.ps1 -Status` |
+| Remove | `inkognito --uninstall` | `... inkognito.ps1 -Uninstall` |
+
+Options: `--port 9000` / `-Port 9000`, `--no-browser` / `-NoBrowser`, and on macOS/Linux `--lan` to let other devices on your network open it.
+
+**The local server listens on `127.0.0.1` only.** Other computers cannot reach it unless you pass `--lan`. Launching never touches the internet. Only the first install and `--update` download the app, from GitHub releases, and the installer checks the SHA-256 checksum before using it.
+
+Autostart uses what your system already has: a systemd user service on Linux, a LaunchAgent on macOS, a Startup shortcut on Windows.
 
 ## Self-host on Proxmox VE
 
-Run this in the **Proxmox host shell**. It creates an unprivileged Alpine Linux container (1 core, 64 MB RAM, 1 GB disk) with lighttpd and the app, and it checks for new releases every night.
+Run the `install.sh` line above in the **Proxmox host shell**, or call the helper directly:
 
 ```bash
 bash -c "$(wget -qLO - https://raw.githubusercontent.com/4velinux/inkognito/main/proxmox/inkognito-lxc.sh)"
 ```
+
+It creates an unprivileged Alpine Linux container (1 core, 64 MB RAM, 1 GB disk) with lighttpd and the app, and it checks for new releases every night. Want it on the host itself instead? Pick option 2 in the menu, or pass `--local`.
 
 Settings can be changed with environment variables:
 
@@ -94,7 +122,7 @@ The image is Alpine plus lighttpd, runs as a non-root user with a read-only file
 
 ## Good to know
 
-- **Drafts are stored per address.** The file on disk, `http://192.168.1.50` and `http://localhost:8080` each keep their own drafts. Use Drafts → Export all and Import to move them.
+- **Drafts are stored per address.** The file on disk, `http://localhost:8765`, `http://192.168.1.50` and `http://localhost:8080` each keep their own drafts, which is why the launcher remembers its port. Use Drafts → Export all and Import to move them.
 - **Copy works everywhere.** On plain `http://` addresses the browser clipboard API is off, so Inkognito falls back to the classic copy command automatically.
 - **Keep it on your network.** For access away from home, use Tailscale or WireGuard rather than opening a port.
 - **About styled letters:** they are Unicode look-alikes, the same technique every formatter uses. Screen readers may spell them out and LinkedIn search does not index them, so style a few key phrases, not whole posts. The checker warns you when styling passes 25% of letters.

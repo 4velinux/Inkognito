@@ -36,7 +36,7 @@ fi
 
 # Shell scripts
 if command -v shellcheck >/dev/null; then
-  shellcheck -S warning proxmox/*.sh scripts/*.sh && good "shellcheck clean" || bad "shellcheck warnings"
+  shellcheck -S warning install.sh proxmox/*.sh scripts/*.sh && good "shellcheck clean" || bad "shellcheck warnings"
 fi
 
 exit $fail

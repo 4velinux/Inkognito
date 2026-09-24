@@ -27,3 +27,58 @@ jobs:
           lighttpd -tt -f /tmp/lt.conf
       - name: Docker image builds
         run: docker build -t inkognito:ci .
+
+  launcher-unix:
+    name: Launcher on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install and start
+        run: bash install.sh --no-browser
+      - name: Serves the app with the privacy headers
+        run: |
+          curl -fsS http://localhost:8765/ | grep -q '<title>Inkognito</title>'
+          curl -fsSI http://localhost:8765/ | grep -qi "connect-src 'none'"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8765/nope)" = 404
+      - name: Status, stop, uninstall
+        run: |
+          L="$( [ "$RUNNER_OS" = macOS ] && echo "$HOME/Library/Application Support/Inkognito" || echo "$HOME/.local/share/inkognito" )/inkognito.sh"
+          bash "$L" --status
+          bash "$L" --stop
+          ! curl -fsS --max-time 2 http://localhost:8765/ >/dev/null
+          bash "$L" --uninstall
+
+  launcher-windows:
+    name: Launcher on Windows (${{ matrix.shell }})
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install and start
+        run: ./install.ps1 -NoBrowser
+      - name: Serves the app with the privacy headers
+        run: |
+          $r = Invoke-WebRequest http://localhost:8765/ -UseBasicParsing
+          if ($r.Content -notmatch '<title>Inkognito</title>') { throw 'wrong page' }
+          if ($r.Headers['Content-Security-Policy'] -notmatch "connect-src 'none'") { throw 'CSP header missing' }
+          if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Inkognito.lnk")) { throw 'Start menu shortcut missing' }
+      - name: Autostart, stop, uninstall
+        run: |
+          $L = "$env:LOCALAPPDATA\Inkognito\inkognito.ps1"
+          & $L -Autostart on
+          if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Inkognito.lnk")) { throw 'autostart missing' }
+          & $L -Autostart off
+          & $L -Status
+          & $L -Stop
+          & $L -Uninstall
+          if (Test-Path "$env:LOCALAPPDATA\Inkognito") { throw 'not removed' }

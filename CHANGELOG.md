@@ -12,5 +12,7 @@ First public release.
 - Privacy check for emails, phones, card numbers, Thai IDs, IBANs, API keys, internal addresses and tracking links
 - Privacy lock (CSP), live network-request counter, erase all local data
 - Drafts, templates, JSON export and import
+- One-line installers for Windows (PowerShell), macOS and Linux: localhost server, browser launch, Start menu or `inkognito` command, autostart, verified updates, uninstall
+- The same `install.sh` detects Proxmox VE and acts as a helper script
 - Proxmox VE Alpine LXC installer with verified nightly updates and rollback
 - Docker image (Alpine + lighttpd, non-root, read-only)
