@@ -52,6 +52,15 @@ button{cursor:pointer}
 .brand{display:flex;align-items:center;gap:10px;margin-right:6px}
 .brand svg{flex:none}
 .brand b{font-weight:800;font-size:18px;letter-spacing:-.04em}
+.byline{color:var(--muted);font-size:12px;white-space:nowrap}
+.byline a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.byline a:hover{color:var(--ink)}
+.tb-shortcuts{margin-left:auto}
+.tb-shortcuts .tb{gap:6px}
+.credit{display:flex;align-items:center;gap:10px}
+.credit a{display:inline-flex;align-items:center;gap:5px;color:var(--muted);text-decoration:none;font-weight:600}
+.credit a:hover{color:var(--ink)}
+.credit svg{flex:none}
 .draft-name{color:var(--muted);font-size:13px;max-width:28ch;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top-actions{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 
@@ -261,6 +270,7 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
     <div class="brand">
       <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="#3F51B5"/><path d="M13 4.5c0 0-6.2 7.1-6.2 11.6a6.2 6.2 0 0 0 12.4 0C19.2 11.6 13 4.5 13 4.5z" fill="#fff"/><rect x="6.2" y="13.2" width="13.6" height="3.8" rx="1.9" fill="#E91E63"/><circle cx="10.4" cy="15.1" r="1" fill="#fff"/><circle cx="15.6" cy="15.1" r="1" fill="#fff"/></svg>
       <b>Inkognito</b>
+      <span class="byline">by <a href="https://www.linkedin.com/in/pedroavelino" target="_blank" rel="noopener noreferrer">Pedro Avelino</a></span>
     </div>
     <span class="draft-name" id="draftName"></span>
     <div class="top-actions">
@@ -288,26 +298,6 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
       </div>
       <button class="btn ghost" id="focusBtn" aria-pressed="false" title="Hide preview and checks">Focus</button>
       <button class="btn ghost" id="themeBtn" title="Switch app theme">Theme: System</button>
-      <div class="pop-wrap">
-        <button class="btn ghost" data-pop="p-help" aria-expanded="false" aria-label="Keyboard shortcuts">?</button>
-        <div class="pop" id="p-help" hidden>
-          <h4>Shortcuts</h4>
-          <div class="help">
-            <kbd>Ctrl/⌘ B</kbd><span>Bold (again to remove)</span>
-            <kbd>Ctrl/⌘ I</kbd><span>Italic (combine with bold)</span>
-            <kbd>Ctrl/⌘ U</kbd><span>Underline</span>
-            <kbd>Ctrl/⌘ ⇧ X</kbd><span>Strikethrough</span>
-            <kbd>Ctrl/⌘ E</kbd><span>Monospace</span>
-            <kbd>Ctrl/⌘ ⇧ 8</kbd><span>Bullet list</span>
-            <kbd>Ctrl/⌘ ⇧ 7</kbd><span>Numbered list</span>
-            <kbd>Ctrl/⌘ F</kbd><span>Find and replace</span>
-            <kbd>Ctrl/⌘ Enter</kbd><span>Copy for LinkedIn</span>
-            <kbd>Ctrl/⌘ S</kbd><span>Save draft now</span>
-            <kbd>Esc</kbd><span>Stop styled typing</span>
-          </div>
-          <p class="note">Press Bold or Italic with nothing selected and everything you type comes out styled until you press it again.</p>
-        </div>
-      </div>
     </div>
   </div>
 </header>
@@ -368,6 +358,26 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
         <button class="tb" data-cmd="find" title="Find and replace (Ctrl/⌘ F)"><span class="cap">Find</span></button>
         <button class="tb" data-cmd="markdown" title="Turn **bold**, *italic*, ~~strike~~, `code` and - lists into LinkedIn text"><span class="cap">MD→</span></button>
         <button class="tb" data-cmd="tidy" title="Trim trailing spaces, collapse extra blank lines"><span class="cap">Tidy</span></button>
+        <div class="pop-wrap tb-shortcuts">
+          <button class="tb" data-pop="p-help" aria-expanded="false" aria-label="Keyboard shortcuts" title="Keyboard shortcuts"><span>⌨</span><span class="cap">Shortcuts</span></button>
+          <div class="pop" id="p-help" hidden>
+            <h4>Shortcuts</h4>
+            <div class="help">
+              <kbd>Ctrl/⌘ B</kbd><span>Bold (again to remove)</span>
+              <kbd>Ctrl/⌘ I</kbd><span>Italic (combine with bold)</span>
+              <kbd>Ctrl/⌘ U</kbd><span>Underline</span>
+              <kbd>Ctrl/⌘ ⇧ X</kbd><span>Strikethrough</span>
+              <kbd>Ctrl/⌘ E</kbd><span>Monospace</span>
+              <kbd>Ctrl/⌘ ⇧ 8</kbd><span>Bullet list</span>
+              <kbd>Ctrl/⌘ ⇧ 7</kbd><span>Numbered list</span>
+              <kbd>Ctrl/⌘ F</kbd><span>Find and replace</span>
+              <kbd>Ctrl/⌘ Enter</kbd><span>Copy for LinkedIn</span>
+              <kbd>Ctrl/⌘ S</kbd><span>Save draft now</span>
+              <kbd>Esc</kbd><span>Stop styled typing</span>
+            </div>
+            <p class="note">Press Bold or Italic with nothing selected and everything you type comes out styled until you press it again.</p>
+          </div>
+        </div>
       </div>
 
       <div class="findbar" id="findbar" hidden>
@@ -522,7 +532,11 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
       </div>
     </div>
     <button class="linkbtn" id="wipeBtn">Erase all local data</button>
-    <a class="linkbtn" href="https://github.com/4velinux/Inkognito" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+    <span class="credit">
+      <span>Created by Pedro Avelino</span>
+      <a href="https://www.linkedin.com/in/pedroavelino" target="_blank" rel="noopener noreferrer" aria-label="Pedro Avelino on LinkedIn"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="3" fill="currentColor"/><path d="M3.4 6.2h2v6.2h-2zM4.4 3.3a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM6.9 6.2h1.9v.85h.03c.27-.5.92-1.02 1.9-1.02 2.03 0 2.4 1.28 2.4 2.95v3.42h-2V9.36c0-.72-.02-1.66-1.05-1.66-1.05 0-1.21.78-1.21 1.6v3.1h-2z" fill="var(--bg)"/></svg>LinkedIn</a>
+      <a href="https://github.com/4velinux/Inkognito" target="_blank" rel="noopener noreferrer" aria-label="Inkognito source on GitHub"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 .2a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.48c-2.23.48-2.7-1.05-2.7-1.05-.36-.93-.89-1.18-.89-1.18-.72-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.2 1.87.86 2.33.66.07-.52.28-.86.5-1.06-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.58.82-2.14-.08-.2-.36-1.02.08-2.13 0 0 .67-.22 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.11.16 1.93.08 2.13.51.56.82 1.27.82 2.14 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.14.46.55.38A8 8 0 0 0 8 .2z" fill="currentColor"/></svg>GitHub</a>
+    </span>
     <span class="ver" id="appVer"></span>
   </div>
 </footer>
@@ -1156,7 +1170,7 @@ $('#themeBtn').onclick=function(){prefs.theme=THEMES[(THEMES.indexOf(prefs.theme
 var toastT;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2200)}
 
 /* ---------- privacy footer ---------- */
-var VERSION='1.0.0';
+var VERSION='1.1.0';
 $('#appVer').textContent='v'+VERSION;
 function external(e){var n=e.name||'';return !/^(data|blob|about):/.test(n)}
 function netRefresh(){var n=0;try{n=performance.getEntriesByType('resource').filter(external).length}catch(x){}

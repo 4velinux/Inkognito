@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.0 · 2026-09-24
+
+- README rewritten to lead with the core value: Inkognito is one self-contained HTML file, download it and open it, nothing to install or host. Self-hosting (Proxmox, Docker, always-on services) is now a clearly optional section, not the headline.
+- Added a real, dated privacy comparison against competing LinkedIn formatters, based on live network/cookie/tracker checks of their marketing pages.
+- Added creator credit ("Created by Pedro Avelino", with LinkedIn and GitHub links) to the app header and footer, and to the top of the README.
+- Moved the keyboard shortcuts button from the top header into the editor toolbar, right next to the WYSIWYG controls, for more visibility while writing.
+
 ## v1.0.0 · 2026-09-24
 
 First public release.
