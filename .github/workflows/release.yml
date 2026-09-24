@@ -1,8 +1,12 @@
 name: Release
 
-# Push a tag like v1.2.0 (matching var VERSION in inkognito.html) to publish.
-# Proxmox containers pick up the new release on their nightly check.
+# Publish a release in the GitHub UI (tag v1.2.0, matching var VERSION in
+# inkognito.html), or push that tag. This workflow attaches the app, its
+# SHA-256 checksum, and builds the container image. Self-hosted installs pick
+# the new version up on their next update check.
 on:
+  release:
+    types: [published]
   push:
     tags: ['v*.*.*']
 
@@ -17,7 +21,7 @@ jobs:
       - name: Tag matches app version
         run: |
           v=$(sed -n "s/.*var VERSION='\([^']*\)'.*/\1/p" inkognito.html | head -n1)
-          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME but inkognito.html says v$v"; exit 1; }
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "::error::Tag $GITHUB_REF_NAME but inkognito.html says v$v"; exit 1; }
       - name: Privacy guard
         run: sudo apt-get install -y -qq shellcheck >/dev/null && bash scripts/check.sh
       - name: Checksum
@@ -26,8 +30,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" inkognito.html inkognito.html.sha256 \
-            --title "Inkognito $GITHUB_REF_NAME" --generate-notes --verify-tag
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" inkognito.html inkognito.html.sha256 --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" inkognito.html inkognito.html.sha256 \
+              --title "Inkognito $GITHUB_REF_NAME" --generate-notes --verify-tag
+          fi
 
   image:
     name: Container image (ghcr.io)

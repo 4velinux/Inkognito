@@ -47,10 +47,10 @@ Please test on a desktop browser and a phone-width window (the mobile preview an
 Maintainers bump `var VERSION` in `inkognito.html`, add a line to `CHANGELOG.md`, then tag:
 
 ```bash
-git tag v1.1.0 && git push origin v1.1.0
+git tag v1.1.0 && git push origin v1.1.0   # or: GitHub > Releases > Draft a new release
 ```
 
-The release workflow checks the tag matches the version, runs the privacy guard, and publishes `inkognito.html` with a SHA-256 checksum. Self-hosted containers pick it up on their nightly check.
+Publishing a release in the GitHub UI works the same way. The release workflow checks the tag matches the version, runs the privacy guard, and publishes `inkognito.html` with a SHA-256 checksum. Self-hosted containers pick it up on their nightly check.
 
 ## Testing the Proxmox installer from your fork
 
