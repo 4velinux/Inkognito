@@ -5,32 +5,35 @@
 
 ## What was checked
 
-Marketing/landing pages of the most-used LinkedIn writing tools, loaded in a fresh browser profile with no ad blocker, no prior cookies, and no interaction beyond the page load itself. For each site:
+The marketing/editor pages of the most-used LinkedIn writing tools, loaded in a fresh browser profile with no ad blocker and no prior cookies. For each site I:
 
-- Every network request fired on load (`Browser pane → read_network_requests`)
-- `document.cookie` immediately after load
-- Presence of known tracker globals (`gtag`, `ga`, `fbq`, `hj`, `clarity`, `posthog`, `Intercom`, `_linkedin_partner_id`)
-- Third-party `<script src>` tags queued on the page, including those gated behind a cookie-consent banner
+- Counted every network request fired, from page load through typing a short canary phrase into the editor (where one existed)
+- Counted distinct outside domains contacted (anything not the tool's own)
+- Read `document.cookie` after that interaction
+- Watched for known tracker globals and endpoints (Google Analytics/Ads, Meta Pixel, Microsoft Clarity, RudderStack, PostHog, LinkedIn Insight Tag, Crisp, Sentry) and noted anything that fired specifically after typing
 
 ## Results
 
-| Tool | Trackers observed on load | Cookies set | Notes |
-|---|---|---|---|
-| **Taplio** | Google Analytics (2 separate GA4 measurement IDs), Meta Pixel, Microsoft Clarity | 12 | GA and Meta beacons fire, and a Clarity session-replay recorder starts, before any interaction with the page. |
-| **AuthoredUp** | Google Tag Manager, MailerLite, an affiliate-tracking script, reCAPTCHA | 0 until consent given | 16 third-party scripts queued behind a cookie-consent banner. Nothing fires before consent, but the affiliate tracker and Tag Manager are ready the moment it's given. |
-| **Typefully** | None found | 0 | The marketing page loaded clean: 74 requests, all first-party (`typefully.com`). Included here because a clean result deserves reporting exactly as much as a dirty one. |
-| **Inkognito** | None. Ever. | 0 | `default-src 'none'; connect-src 'none'` in the page's Content Security Policy makes an outbound request from the app impossible, not merely absent. This is enforced by the browser itself, and `scripts/check.sh` fails the build in CI if the policy, or the zero-network guarantee, ever regresses. |
+| Tool | Requests | Outside domains | Cookies set | What's on the page |
+|---|---|---|---|---|
+| **Taplio** | 67 | 27 | 12 | Google Analytics and Ads, Meta Pixel, Microsoft Clarity (session recording), RudderStack analytics. No cookie banner shown. |
+| **ConnectSafely** | 73 | 25 | 10 | Meta, X, Reddit and Google Ads pixels, Clarity, Crisp chat. It has a cookie banner, but ad cookies were already set before I answered it. Clarity sent data right after I typed. |
+| **WaveGen** | 40 | 7 | 3 | Google Analytics, LinkedIn Insight Tag, PostHog. A call to PostHog's session-recording endpoint went out right after I typed. |
+| **AuthoredUp** | 25 | 8 | 0 | Google, MailerLite, YouTube. No ad trackers. The page had no editor to type into; it points you to a Chrome extension or sign-up instead. |
+| **Typefully** | 84 | 2 | 0 | Google Fonts and Sentry error monitoring. Most requests are its own. |
+| **Poper** | 53 | 2 | 0 | Google Fonts and Cloudflare's analytics. |
+| **Inkognito** | **1** | **0** | **0** | The page itself. The browser is told to block every other connection. |
 
 ## Caveats, stated plainly
 
-- **This checks marketing pages, not the paid product.** What happens inside a tool after signup, once you're pasting real drafts into it, was not tested here and may look different (better or worse) than the landing page.
-- **A request never showing a canary phrase in its URL doesn't prove your text never left the page.** Request bodies are opaque to a network-request listing; only reading server-side logs (which nobody outside these companies can do) would settle that fully.
-- **Session-replay tools sometimes mask typed input by default** (password-style fields, or configured exclusions), so "Clarity is present" is evidence of a recording capability, not proof that this specific draft text was captured.
-- **Sites change.** This is a snapshot from one date, not a permanent verdict. Cookie banners, consent-management platforms and geographic variation (EU vs. US IP, for instance) can change what fires on a given visit. Re-run the check yourself before relying on it.
-- **Absence of evidence isn't evidence of absence** for Typefully specifically: a clean marketing-page load is a genuinely good sign, but it's one snapshot, not an audit of their product or their backend.
+- **This checks what a page does on load and on typing, not the full paid product.** Behavior after signup or deep in a paid workflow wasn't tested and may differ.
+- **A request never showing your text in its URL doesn't prove nothing left the page.** Request bodies are opaque to a network-request listing; that's a limit of this method, not a clean bill of health.
+- **Session-replay tools sometimes mask typed input by default**, so a tool like Clarity or PostHog being present is evidence of a recording capability, not proof this exact text was captured.
+- **Sites change.** This is a snapshot from one date. Cookie banners, consent platforms and your region can all change what fires on a given visit. Re-run it yourself before relying on it.
+- Inkognito's single request is the page's own HTML loading from wherever you opened it (disk, a release download, or a server if you chose to self-host). After that, its Content Security Policy makes a second request impossible, not just unlikely.
 
 ## Why this matters more than it looks
 
-None of this makes Taplio or AuthoredUp unusual. It makes them normal: a hosted SaaS tool needs analytics to run a business, and analytics means a script watching the page you're typing into. That trade-off is reasonable for most software. It's a worse trade-off for the one text box where you draft things you haven't decided to say publicly yet.
+None of this makes these tools unusual, it makes them normal. A hosted SaaS product needs analytics to run a business, and analytics means a script watching the page you're typing into. That trade-off is fine for most software. It's a worse trade-off for the one text box where you draft things you haven't decided to say publicly yet.
 
-Inkognito's answer isn't "we promise not to track you." It's "there is no server for your text to reach, so the question doesn't apply." That's a different, stronger, and mechanically verifiable claim, and it's why the check above is worth re-running rather than taking on faith.
+Inkognito's answer isn't "we promise not to track you." It's "there is no server for your text to reach, so the question doesn't apply." That's a different, stronger and mechanically verifiable claim, which is exactly why it's worth re-running rather than taking on faith.
