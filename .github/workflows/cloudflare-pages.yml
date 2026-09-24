@@ -1,0 +1,42 @@
+name: Deploy to Cloudflare Pages
+
+# Publishes inkognito.html to Cloudflare Pages (served at
+# inkognito.a-eye.cloud) every time a GitHub release is published, or
+# on demand. Runs the same privacy guard as CI first, so nothing that
+# fails scripts/check.sh ever goes live.
+#
+# One-time setup (repo owner, not this workflow, see CONTRIBUTING.md):
+#   1. Create a Cloudflare Pages project named "inkognito" (Direct Upload).
+#   2. Add it a custom domain: inkognito.a-eye.cloud.
+#   3. Add two repository secrets (Settings → Secrets and variables →
+#      Actions): CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
+# After that, every published release deploys automatically.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Privacy guard
+        run: sudo apt-get install -y -qq shellcheck >/dev/null && bash scripts/check.sh
+      - name: Build the site (single page, served as index.html)
+        run: |
+          mkdir -p _site
+          cp inkognito.html _site/index.html
+          cp inkognito.html _site/inkognito.html
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: inkognito
+          directory: _site
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

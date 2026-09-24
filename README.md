@@ -23,6 +23,8 @@
 
 **That's it. That's the whole install guide.**
 
+Just want to try it first? [**inkognito.a-eye.cloud**](https://inkognito.a-eye.cloud) runs the exact same file, hosted. Same CSP, same zero network requests once it loads, just one click instead of a download.
+
 </div>
 
 ---
