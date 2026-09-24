@@ -4,6 +4,8 @@
 
 First public release.
 
+- New favicon and header mark: a fountain-pen nib doubling as a masked face, referencing Ink, Incognito and LinkedIn's blue in one icon. Embedded inline (no external file, no network request).
+
 - Unicode formatting: bold, italic, bold italic, 22 letter styles, five line styles, lists, emoji, symbols, dividers, case, find and replace
 - "Sample post (demo)" in the Templates menu, so the built-in demo post can be loaded back anytime without erasing your real drafts
 - Paste from Google Docs, Word and Markdown with formatting kept
