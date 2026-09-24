@@ -67,6 +67,12 @@ jobs:
           systemctl show inkognito -p DynamicUser | grep -q yes
           IP=$(hostname -I | awk '{print $1}')
           curl -fsS "http://$IP:8765/" | grep -q '<title>Inkognito</title>'
+      - name: Diagnostics
+        if: failure()
+        run: |
+          echo "::error title=systemctl::$(systemctl status inkognito --no-pager 2>&1 | tail -n 15 | tr '\n' '|')"
+          echo "::error title=journal::$(sudo journalctl -u inkognito --no-pager -n 25 2>&1 | tr '\n' '|')"
+          echo "::error title=unit::$(systemctl cat inkognito 2>&1 | tr '\n' '|')"
       - name: Uninstall removes the service
         run: |
           sudo inkognito --uninstall

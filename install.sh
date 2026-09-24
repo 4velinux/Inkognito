@@ -26,6 +26,8 @@
 #  download the app, from GitHub releases, verified by SHA-256.
 # ---------------------------------------------------------------------------
 set -Eeuo pipefail
+# services (systemd DynamicUser, OpenRC as nobody, cron) may start us without a HOME
+: "${HOME:=/tmp}"; export HOME
 
 LAUNCHER_VERSION="1.2.0"
 REPO="${INKOGNITO_REPO:-4velinux/Inkognito}"
