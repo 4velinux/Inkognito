@@ -1,0 +1,4 @@
+.DS_Store
+*.swp
+inkognito.html.sha256
+node_modules/

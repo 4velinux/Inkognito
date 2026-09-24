@@ -1,0 +1,21 @@
+name: Feature idea
+description: Suggest a new style, check, preview or deploy option
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it helps
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy promise
+      options:
+        - label: This works without sending anything to a server
+          required: true

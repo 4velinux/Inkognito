@@ -1,0 +1,15 @@
+services:
+  inkognito:
+    build: .
+    image: inkognito:local
+    container_name: inkognito
+    ports:
+      - "8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped

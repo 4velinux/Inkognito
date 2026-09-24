@@ -1,0 +1,30 @@
+name: Release
+
+# Push a tag like v1.2.0 (matching var VERSION in inkognito.html) to publish.
+# Proxmox containers pick up the new release on their nightly check.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches app version
+        run: |
+          v=$(sed -n "s/.*var VERSION='\([^']*\)'.*/\1/p" inkognito.html | head -n1)
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME but inkognito.html says v$v"; exit 1; }
+      - name: Privacy guard
+        run: sudo apt-get install -y -qq shellcheck >/dev/null && bash scripts/check.sh
+      - name: Checksum
+        run: sha256sum inkognito.html > inkognito.html.sha256 && cat inkognito.html.sha256
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" inkognito.html inkognito.html.sha256 \
+            --title "Inkognito $GITHUB_REF_NAME" --generate-notes --verify-tag

@@ -1,0 +1,29 @@
+name: Privacy check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install shellcheck and lighttpd
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck lighttpd
+      - name: Privacy guard
+        run: bash scripts/check.sh
+      - name: Web server configs parse
+        run: |
+          lighttpd -tt -f docker/lighttpd.conf
+          sed 's/"lighttpd"/"www-data"/g; s#/run/lighttpd.pid#/tmp/lt.pid#; s#/var/log/lighttpd/error.log#/tmp/lt.log#' proxmox/lighttpd.conf > /tmp/lt.conf
+          lighttpd -tt -f /tmp/lt.conf
+      - name: Docker image builds
+        run: docker build -t inkognito:ci .
