@@ -1,14 +1,11 @@
 # Changelog
 
-## v1.0.1 · 2026-09-24
-
-- Added "Sample post (demo)" to the Templates menu, so the built-in demo post can be loaded back anytime without erasing your real drafts.
-
 ## v1.0.0 · 2026-09-24
 
 First public release.
 
 - Unicode formatting: bold, italic, bold italic, 22 letter styles, five line styles, lists, emoji, symbols, dividers, case, find and replace
+- "Sample post (demo)" in the Templates menu, so the built-in demo post can be loaded back anytime without erasing your real drafts
 - Paste from Google Docs, Word and Markdown with formatting kept
 - Desktop and mobile LinkedIn feed previews with measured "…more" fold, light and dark feeds, image and author preview
 - Character meter for six LinkedIn fields with sweet-spot band and fold markers
