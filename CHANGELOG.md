@@ -1,12 +1,5 @@
 # Changelog
 
-## v1.1.0 · 2026-09-24
-
-- README rewritten to lead with the core value: Inkognito is one self-contained HTML file, download it and open it, nothing to install or host. Self-hosting (Proxmox, Docker, always-on services) is now a clearly optional section, not the headline.
-- Added a real, dated privacy comparison against competing LinkedIn formatters, based on live network/cookie/tracker checks of their marketing pages.
-- Added creator credit ("Created by Pedro Avelino", with LinkedIn and GitHub links) to the app header and footer, and to the top of the README.
-- Moved the keyboard shortcuts button from the top header into the editor toolbar, right next to the WYSIWYG controls, for more visibility while writing.
-
 ## v1.0.0 · 2026-09-24
 
 First public release.
@@ -19,6 +12,9 @@ First public release.
 - Privacy check for emails, phones, card numbers, Thai IDs, IBANs, API keys, internal addresses and tracking links
 - Privacy lock (CSP), live network-request counter, erase all local data
 - Drafts, templates, JSON export and import
+- Keyboard shortcuts, in the editor toolbar next to the WYSIWYG controls
+- A real, dated privacy comparison against competing LinkedIn formatters (`docs/privacy-comparison.md`), based on live network/cookie/tracker checks of their marketing pages
+- Creator credit ("Created by Pedro Avelino", with LinkedIn and GitHub links) in the app header/footer and in the README
 - One-line installers for Windows (PowerShell), macOS and Linux: localhost server, browser launch, Start menu or `inkognito` command, autostart, verified updates, uninstall
 - Smart host detection, no menus: desktops get a per-user localhost install; headless Linux, Windows Server and SSH sessions get an always-on network service; Proxmox VE gets an Alpine LXC (updated in place on re-run); TrueNAS, Unraid, Synology and QNAP get the Docker container
 - Multi-arch container image on ghcr.io for every release
