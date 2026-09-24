@@ -1172,7 +1172,7 @@ $('#themeBtn').onclick=function(){prefs.theme=THEMES[(THEMES.indexOf(prefs.theme
 var toastT;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2200)}
 
 /* ---------- privacy footer ---------- */
-var VERSION='1.0.0';
+var VERSION='1.0.1';
 $('#appVer').textContent='v'+VERSION;
 function external(e){var n=e.name||'';return !/^(data|blob|about):/.test(n)}
 function netRefresh(){var n=0;try{n=performance.getEntriesByType('resource').filter(external).length}catch(x){}
