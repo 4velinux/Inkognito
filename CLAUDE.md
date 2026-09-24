@@ -67,7 +67,7 @@ welcome.
   v*.*.*`. Verifies tag == version, runs the privacy guard, computes the
   SHA-256, attaches `inkognito.html` + `.sha256` to the release, then builds
   and pushes a multi-arch container image to `ghcr.io`.
-- **`cloudflare-pages.yml`**: triggers on `release: published` (or manual
+- **`cloudflare-pages.yml`**: triggers on push to `main`, `release: published` (or manual
   `workflow_dispatch`). Deploys `inkognito.html` (as `index.html`) to
   Cloudflare Pages, live at **inkognito.a-eye.cloud**. Uses
   `cloudflare/wrangler-action@v3` with `command: pages deploy _site

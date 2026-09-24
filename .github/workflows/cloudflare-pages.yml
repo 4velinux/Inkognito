@@ -13,9 +13,15 @@ name: Deploy to Cloudflare Pages
 # After that, every published release deploys automatically.
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
+
+concurrency:
+  group: cloudflare-pages
+  cancel-in-progress: true
 
 permissions:
   contents: read
