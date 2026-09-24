@@ -739,6 +739,7 @@ B('What changes for security teams:')+'\n\n'+
 "#AISecurity #ZeroTrust #PromptInjection #AgenticAI";
 
 var TEMPLATES=[
+ {name:'🕶 Sample post (demo)',text:SAMPLE},
  {name:'Pattern interrupt',text:B('Huh.')+'\n\n[One surprising observation, one line.]\n\n[What you read or tested, with the number that matters. Name the source.]\n\nHere is why it matters:\n\n→ [Point tied to a business outcome]\n→ [Point two]\n→ [Point three]\n\n[One sentence that reframes the risk.]\n\n[One open question that challenges an assumption?]\n\n#AIGovernance #Privacy #CyberSecurity'},
  {name:'Research finding',text:B('New paper. Uncomfortable result.')+'\n\n[Authors, institution, month] tested [what] on [sample size].\n\n'+I('Finding:')+' [the number, stated plainly]\n\nMethod note: [one line on how they measured it, so technical readers trust it]\n\nWhat it means for [CISOs / HR / policy makers]:\n\n• [Implication one]\n• [Implication two]\n• [Implication three]\n\n[Your stance in one sentence.]\n\n[Question?]'},
  {name:'Contrarian',text:B('Everyone is asking the wrong question about [topic].')+'\n\nThe usual question: [common framing].\n\nThe better one: [your framing].\n\n[Evidence, with a stat or a case.]\n\n[Acknowledge the strongest opposing view in one line.]\n\n[Your conclusion.]\n\n[Question?]'},
@@ -1170,7 +1171,7 @@ $('#themeBtn').onclick=function(){prefs.theme=THEMES[(THEMES.indexOf(prefs.theme
 var toastT;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2200)}
 
 /* ---------- privacy footer ---------- */
-var VERSION='1.0.0';
+var VERSION='1.0.1';
 $('#appVer').textContent='v'+VERSION;
 function external(e){var n=e.name||'';return !/^(data|blob|about):/.test(n)}
 function netRefresh(){var n=0;try{n=performance.getEntriesByType('resource').filter(external).length}catch(x){}

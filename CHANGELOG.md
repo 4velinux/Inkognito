@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.1 · 2026-09-24
+
+- Added "Sample post (demo)" to the Templates menu, so the built-in demo post can be loaded back anytime without erasing your real drafts.
+
 ## v1.0.0 · 2026-09-24
 
 First public release.
