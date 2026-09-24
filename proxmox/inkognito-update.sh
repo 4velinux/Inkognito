@@ -8,11 +8,11 @@
 #   inkognito-update --status        show what is live
 #
 # Settings live in /etc/inkognito.conf:
-#   REPO=4velinux/inkognito   use your fork here
+#   REPO=4velinux/Inkognito   use your fork here
 #   CHANNEL=release           release = tagged versions (checksum-verified), main = every commit
 set -eu
 
-REPO="4velinux/inkognito"
+REPO="4velinux/Inkognito"
 CHANNEL="release"
 WEB="/var/www/inkognito"
 BACKUPS="/var/backups/inkognito"

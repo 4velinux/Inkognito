@@ -28,8 +28,8 @@ jobs:
       - name: Docker image builds
         run: docker build -t inkognito:ci .
 
-  launcher-unix:
-    name: Launcher on ${{ matrix.os }}
+  launcher-desktop:
+    name: Desktop install on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -37,14 +37,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install and start
-        run: bash install.sh --no-browser
-      - name: Serves the app with the privacy headers
+      - name: Detection
+        run: bash install.sh --detect
+      - name: Install for this user only
+        run: bash install.sh --desktop --no-browser --yes
+      - name: Serves on localhost with the privacy headers
         run: |
           curl -fsS http://localhost:8765/ | grep -q '<title>Inkognito</title>'
           curl -fsSI http://localhost:8765/ | grep -qi "connect-src 'none'"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8765/nope)" = 404
-      - name: Status, stop, uninstall
+      - name: Status, autostart, stop, uninstall
         run: |
           L="$( [ "$RUNNER_OS" = macOS ] && echo "$HOME/Library/Application Support/Inkognito" || echo "$HOME/.local/share/inkognito" )/inkognito.sh"
           bash "$L" --status
@@ -52,8 +54,27 @@ jobs:
           ! curl -fsS --max-time 2 http://localhost:8765/ >/dev/null
           bash "$L" --uninstall
 
-  launcher-windows:
-    name: Launcher on Windows (${{ matrix.shell }})
+  launcher-server-linux:
+    name: Server install on Linux (root, systemd)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auto-detects a headless machine and installs a sandboxed systemd service
+        run: sudo bash install.sh --yes
+      - name: Service is up and serves the network
+        run: |
+          systemctl status inkognito --no-pager
+          systemctl show inkognito -p DynamicUser | grep -q yes
+          IP=$(hostname -I | awk '{print $1}')
+          curl -fsS "http://$IP:8765/" | grep -q '<title>Inkognito</title>'
+      - name: Uninstall removes the service
+        run: |
+          sudo inkognito --uninstall
+          ! systemctl cat inkognito >/dev/null 2>&1
+          test ! -d /opt/inkognito
+
+  launcher-windows-desktop:
+    name: Windows desktop install (${{ matrix.shell }})
     strategy:
       fail-fast: false
       matrix:
@@ -64,9 +85,9 @@ jobs:
         shell: ${{ matrix.shell }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install and start
-        run: ./install.ps1 -NoBrowser
-      - name: Serves the app with the privacy headers
+      - name: Install for this user only
+        run: ./install.ps1 -Desktop -NoBrowser -Yes
+      - name: Serves on localhost with the privacy headers
         run: |
           $r = Invoke-WebRequest http://localhost:8765/ -UseBasicParsing
           if ($r.Content -notmatch '<title>Inkognito</title>') { throw 'wrong page' }
@@ -82,3 +103,27 @@ jobs:
           & $L -Stop
           & $L -Uninstall
           if (Test-Path "$env:LOCALAPPDATA\Inkognito") { throw 'not removed' }
+
+  launcher-windows-server:
+    name: Windows Server install (auto-detected, admin)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detection
+        run: ./install.ps1 -Detect
+      - name: Auto-detects Windows Server and installs the startup service
+        run: ./install.ps1 -Yes
+      - name: Service answers on the network address
+        run: |
+          if (-not (Get-ScheduledTask -TaskName Inkognito)) { throw 'task missing' }
+          $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.PrefixOrigin -in 'Dhcp','Manual' } | Select-Object -First 1).IPAddress
+          $r = Invoke-WebRequest "http://${ip}:8765/" -UseBasicParsing
+          if ($r.Content -notmatch '<title>Inkognito</title>') { throw 'wrong page' }
+      - name: Uninstall removes task, firewall rule and files
+        run: |
+          & "$env:ProgramData\Inkognito\inkognito.ps1" -Uninstall
+          if (Get-ScheduledTask -TaskName Inkognito -ErrorAction SilentlyContinue) { throw 'task left behind' }
+          if (Test-Path "$env:ProgramData\Inkognito") { throw 'files left behind' }

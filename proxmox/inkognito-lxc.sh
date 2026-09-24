@@ -5,7 +5,7 @@
 #  formatter on your network. About 1 GB disk and ~10 MB RAM in use.
 #
 #  Run on the Proxmox host shell:
-#    bash -c "$(wget -qLO - https://raw.githubusercontent.com/4velinux/inkognito/main/proxmox/inkognito-lxc.sh)"
+#    bash -c "$(wget -qLO - https://raw.githubusercontent.com/4velinux/Inkognito/main/proxmox/inkognito-lxc.sh)"
 #
 #  Every setting has a default; override with environment variables, e.g.
 #    CTID=150 CT_NET=192.168.1.50/24 CT_GW=192.168.1.1 bash inkognito-lxc.sh
@@ -21,7 +21,7 @@
 #  CT_VLAN         VLAN tag                     (none)
 #  CT_STORAGE      storage for the container    (auto)
 #  TPL_STORAGE     storage for the template     (auto)
-#  INKOGNITO_REPO  GitHub owner/repo to install from, use your fork here  (4velinux/inkognito)
+#  INKOGNITO_REPO  GitHub owner/repo to install from, use your fork here  (4velinux/Inkognito)
 #  INKOGNITO_REF   branch used for the setup files                         (main)
 #  CHANNEL         release (checksum-verified tags) or main (every commit)  (release)
 #  AUTO_UPDATE     yes = check for new versions every night              (yes)
@@ -29,7 +29,7 @@
 # ---------------------------------------------------------------------------
 set -Eeuo pipefail
 
-REPO="${INKOGNITO_REPO:-4velinux/inkognito}"
+REPO="${INKOGNITO_REPO:-4velinux/Inkognito}"
 REF="${INKOGNITO_REF:-main}"
 RAW="https://raw.githubusercontent.com/${REPO}/${REF}"
 CT_HOSTNAME="${CT_HOSTNAME:-inkognito}"
@@ -78,6 +78,19 @@ command -v pct >/dev/null && command -v pveam >/dev/null || die "This must run o
 PVE_VER="$(pveversion | grep -oE 'pve-manager/[0-9]+' | cut -d/ -f2 || echo 0)"
 [ "${PVE_VER:-0}" -ge 8 ] || warn "Tested on Proxmox VE 8 and 9. You have $(pveversion | cut -d/ -f2)."
 
+# Already installed? Update that container instead of creating a second one.
+EXISTING="$(pct list 2>/dev/null | awk 'NR>1 {print $1}' | while read -r id; do
+  pct config "$id" 2>/dev/null | grep -qE '^tags:.*inkognito' && echo "$id"; done | head -n1 || true)"
+if [ -n "$EXISTING" ] && [ -z "${INKOGNITO_NEW:-}" ]; then
+  ok "Inkognito already runs in container $EXISTING, updating it instead (INKOGNITO_NEW=1 creates another)"
+  pct status "$EXISTING" | grep -q running || pct start "$EXISTING"
+  sleep 2
+  pct exec "$EXISTING" -- inkognito-update || warn "Update check failed, the current version keeps running."
+  IP="$(pct exec "$EXISTING" -- ip -4 -o addr show dev eth0 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -n1 || true)"
+  printf '\n %sOpen:%s  http://%s\n\n' "$GN" "$CL" "${IP:-<container-ip>}"
+  exit 0
+fi
+
 CTID="${CTID:-$(pvesh get /cluster/nextid)}"
 if pct status "$CTID" >/dev/null 2>&1 || qm status "$CTID" >/dev/null 2>&1; then die "ID $CTID is already in use. Set CTID=<free id>."; fi
 
@@ -100,8 +113,9 @@ msg "Resources        ${CT_CORES} core · ${CT_RAM} MB RAM · ${CT_DISK} GB disk
 msg "Network          ${CT_BRIDGE} · ${CT_NET}${CT_VLAN:+ · VLAN $CT_VLAN}"
 msg "App source       ${REPO} (${CHANNEL}), nightly updates: ${AUTO_UPDATE}"
 if [ -z "${INKOGNITO_YES:-}" ] && [ -t 0 ]; then
-  read -r -p " Create it? [Y/n] " ans
-  case "${ans:-y}" in [yY]*) ;; *) die "Cancelled." ;; esac
+  printf '\n Starting in 5 s. Enter starts now, Ctrl+C cancels. '
+  read -r -t 5 _ || true
+  printf '\n'
 fi
 
 # --- template --------------------------------------------------------------

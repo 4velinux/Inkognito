@@ -5,8 +5,8 @@
 **A locally launched, privacy-first LinkedIn formatter for self-hosting.**
 Your data, your thoughts are yours to keep on your own machine. Works on Windows, Linux and Mac.
 
-[![Privacy check](https://github.com/4velinux/inkognito/actions/workflows/ci.yml/badge.svg)](https://github.com/4velinux/inkognito/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/4velinux/inkognito?label=release&color=3F51B5)](https://github.com/4velinux/inkognito/releases/latest)
+[![Privacy check](https://github.com/4velinux/Inkognito/actions/workflows/ci.yml/badge.svg)](https://github.com/4velinux/Inkognito/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/4velinux/Inkognito?label=release&color=3F51B5)](https://github.com/4velinux/Inkognito/releases/latest)
 [![Platforms](https://img.shields.io/badge/runs%20on-Windows%20·%20macOS%20·%20Linux%20·%20Proxmox-9C27B0)](#install)
 [![License: MIT](https://img.shields.io/badge/license-MIT-673AB7)](LICENSE)
 
@@ -44,16 +44,29 @@ Inkognito is a single HTML file. Launch it on your own computer with one command
 
 ## Install
 
-One installer per platform. It figures out where it is running and does the right thing.
+**One line. It figures out the rest.** The installer looks at the machine it lands on and picks the right setup, with no menus to answer.
 
-| Where | Run this | What you get |
+**Windows** (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/4velinux/Inkognito/main/install.ps1 | iex
+```
+
+**macOS, Linux, Proxmox VE, NAS** (Terminal or SSH):
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/4velinux/Inkognito/main/install.sh)"
+```
+
+| It detects | So it sets up | Reachable at |
 |---|---|---|
-| **Windows** (PowerShell) | `irm https://raw.githubusercontent.com/4velinux/inkognito/main/install.ps1 \| iex` | App in `%LOCALAPPDATA%\Inkognito`, a Start menu entry, served on `http://localhost:8765`, browser opens |
-| **macOS / Linux** (Terminal) | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/4velinux/inkognito/main/install.sh)"` | App in your user folder, an `inkognito` command, served on `http://localhost:8765`, browser opens |
-| **Proxmox VE** (host shell) | the same `install.sh` line | Detects Proxmox and acts as a helper script: creates a tiny Alpine LXC for your whole network |
-| **No install** | download [`inkognito.html`](https://github.com/4velinux/inkognito/releases/latest/download/inkognito.html) and double-click it | Works the same, straight from disk |
+| **Windows 10/11, macOS, Linux with a screen, WSL** | A per-user install, Start menu entry or `inkognito` command, and opens your browser. No admin rights. | `http://localhost:8765`, this computer only |
+| **Headless Linux** (server, Raspberry Pi, VM, LXC) or an **SSH session** | An always-on service: sandboxed systemd service with a throwaway user as root, a user service or cron without root, OpenRC on Alpine | `http://<machine-ip>:8765` on your network |
+| **Windows Server, Server Core, or SSH into Windows** | An always-on startup task running as the low-privilege LOCAL SERVICE account, plus a firewall rule for private networks only (needs admin) | `http://<machine-ip>:8765` on your network |
+| **Proxmox VE host** | Acts as a helper script: creates a 64 MB Alpine LXC. Run it again later and it updates that container instead of making a second one | `http://<container-ip>` |
+| **TrueNAS SCALE, Unraid, Synology, QNAP** | Runs the hardened Docker container (read-only, no capabilities) with a restart policy | `http://<nas-ip>:8765` |
 
-No admin rights, no package manager, nothing to compile. On macOS and Linux the local server uses the Python 3 that is already on most systems (Ruby as a fallback). If neither exists, Inkognito simply opens from disk.
+Every choice is printed with the reason before anything changes, and setups that serve your network wait 5 seconds so you can cancel. If the guess is wrong, say so: `--desktop`, `--server`, `--docker`, `--proxmox` (Windows: `-Desktop`, `-Server`). Add `--yes` to skip the wait in scripts. `--detect` shows what it would do without installing anything.
+
+Prefer no install at all? Download [`inkognito.html`](https://github.com/4velinux/Inkognito/releases/latest/download/inkognito.html) and double-click it.
 
 ### Everyday use
 
@@ -66,18 +79,18 @@ No admin rights, no package manager, nothing to compile. On macOS and Linux the 
 | Status | `inkognito --status` | `... inkognito.ps1 -Status` |
 | Remove | `inkognito --uninstall` | `... inkognito.ps1 -Uninstall` |
 
-Options: `--port 9000` / `-Port 9000`, `--no-browser` / `-NoBrowser`, and on macOS/Linux `--lan` to let other devices on your network open it.
+Options: `--port 9000` / `-Port 9000`, `--no-browser` / `-NoBrowser`, `--lan` to open a desktop install to your network, `--local-only` to keep a server install on the machine itself.
 
-**The local server listens on `127.0.0.1` only.** Other computers cannot reach it unless you pass `--lan`. Launching never touches the internet. Only the first install and `--update` download the app, from GitHub releases, and the installer checks the SHA-256 checksum before using it.
+**Desktop installs listen on `127.0.0.1` only**, so no other device can reach them. Server installs listen on your network by design. Launching never touches the internet. Only the first install and `--update` download the app, from GitHub releases, and the installer checks the SHA-256 checksum before using it.
 
-Autostart uses what your system already has: a systemd user service on Linux, a LaunchAgent on macOS, a Startup shortcut on Windows.
+Autostart uses what the system already has: systemd, OpenRC or cron on Linux, a LaunchAgent on macOS, a Startup shortcut or startup task on Windows, the restart policy on Docker.
 
 ## Self-host on Proxmox VE
 
 Run the `install.sh` line above in the **Proxmox host shell**, or call the helper directly:
 
 ```bash
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/4velinux/inkognito/main/proxmox/inkognito-lxc.sh)"
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/4velinux/Inkognito/main/proxmox/inkognito-lxc.sh)"
 ```
 
 It creates an unprivileged Alpine Linux container (1 core, 64 MB RAM, 1 GB disk) with lighttpd and the app, and it checks for new releases every night. Want it on the host itself instead? Pick option 2 in the menu, or pass `--local`.
@@ -86,7 +99,7 @@ Settings can be changed with environment variables:
 
 ```bash
 CTID=150 CT_NET=192.168.1.50/24 CT_GW=192.168.1.1 \
-  bash -c "$(wget -qLO - https://raw.githubusercontent.com/4velinux/inkognito/main/proxmox/inkognito-lxc.sh)"
+  bash -c "$(wget -qLO - https://raw.githubusercontent.com/4velinux/Inkognito/main/proxmox/inkognito-lxc.sh)"
 ```
 
 | Variable | Default | What it does |
@@ -97,7 +110,7 @@ CTID=150 CT_NET=192.168.1.50/24 CT_GW=192.168.1.1 \
 | `CT_BRIDGE` / `CT_VLAN` | `vmbr0` / none | Network bridge and VLAN tag |
 | `CT_NET` / `CT_GW` | `dhcp` | Static address in CIDR form, plus gateway |
 | `CT_STORAGE` / `TPL_STORAGE` | auto | Storage for the container and the template |
-| `INKOGNITO_REPO` | `4velinux/inkognito` | Install from your fork |
+| `INKOGNITO_REPO` | `4velinux/Inkognito` | Install from your fork |
 | `CHANNEL` | `release` | `release` = tagged, checksum-verified versions; `main` = every commit |
 | `AUTO_UPDATE` | `yes` | Nightly update check |
 | `INKOGNITO_YES` | unset | `1` skips the confirmation prompt |

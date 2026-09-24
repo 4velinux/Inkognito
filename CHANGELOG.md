@@ -13,6 +13,7 @@ First public release.
 - Privacy lock (CSP), live network-request counter, erase all local data
 - Drafts, templates, JSON export and import
 - One-line installers for Windows (PowerShell), macOS and Linux: localhost server, browser launch, Start menu or `inkognito` command, autostart, verified updates, uninstall
-- The same `install.sh` detects Proxmox VE and acts as a helper script
+- Smart host detection, no menus: desktops get a per-user localhost install; headless Linux, Windows Server and SSH sessions get an always-on network service; Proxmox VE gets an Alpine LXC (updated in place on re-run); TrueNAS, Unraid, Synology and QNAP get the Docker container
+- Multi-arch container image on ghcr.io for every release
 - Proxmox VE Alpine LXC installer with verified nightly updates and rollback
 - Docker image (Alpine + lighttpd, non-root, read-only)

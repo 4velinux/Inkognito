@@ -3,7 +3,7 @@
 ## Reporting
 
 If you find a way for Inkognito to send data anywhere, run code from a pasted draft, or break the installer's integrity checks, please report it privately through
-[GitHub security advisories](https://github.com/4velinux/inkognito/security/advisories/new) rather than a public issue. You should get a reply within a week.
+[GitHub security advisories](https://github.com/4velinux/Inkognito/security/advisories/new) rather than a public issue. You should get a reply within a week.
 
 ## What Inkognito protects
 
