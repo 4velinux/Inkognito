@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.2 · 2026-09-29
+
+- Inspect browser-observed resource requests from the bottom-left badge. Hover, click, tap or focus the badge to open a scrollable list of destination hosts, URLs, resource types and same-origin/other-origin labels.
+- The request list updates as resources are observed and retains observer entries beyond the browser's timing buffer. URLs are displayed as text without contacting their destinations.
+- Replaced the unsupported "from the page host" attribution with "resource requests observed" and explained cached resources, cross-origin restrictions and the limits of this view.
+- Added an explicit unavailable state when resource timing is unsupported, instead of presenting an unverified zero.
+- Still one self-contained HTML file, with no new dependencies or outbound connections. The existing content security policy remains intact.
+
 ## v1.0.1 · 2026-09-24
 
 - New favicon and header mark: a fountain-pen nib doubling as a masked face, referencing Ink, Incognito and LinkedIn's blue in one icon. Embedded inline (no external file, no network request).

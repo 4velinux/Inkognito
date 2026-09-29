@@ -246,6 +246,16 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
 .foot-in{max-width:1480px;margin:0 auto;padding-inline:20px;padding-block:12px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:12px;color:var(--muted)}
 .lock{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ok);background:var(--ok-soft);border-radius:99px;padding:3px 10px 3px 8px;font-variant-numeric:tabular-nums}
 .lock.leak{color:var(--err);background:var(--err-soft)}
+button.lock{border:0;font:inherit;font-weight:700;cursor:pointer;text-align:left}
+button.lock:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+.net-pop{width:min(420px,calc(100vw - 40px));max-height:min(520px,70vh);overflow:auto;color:var(--ink)}
+.net-pop::after{content:"";position:absolute;top:100%;left:0;width:100%;height:10px}
+.net-list{margin:10px 0 0;padding-left:22px;font-size:12px}
+.net-list li{padding:8px 0;border-top:1px solid var(--line)}
+.net-list strong,.net-list code{display:block;overflow-wrap:anywhere;white-space:normal}
+.net-list code{margin-top:4px;font-size:11px;user-select:text}
+.net-meta{color:var(--muted);font-size:11px}
+.net-empty{font-size:13px;margin:10px 0}
 .linkbtn{border:0;background:transparent;padding:0;color:var(--primary);font-weight:600;font-size:12px;text-decoration:none}
 .linkbtn:hover{text-decoration:underline}
 .ver{margin-left:auto;font-variant-numeric:tabular-nums}
@@ -517,7 +527,16 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
 
 <footer class="foot">
   <div class="foot-in">
-    <span class="lock" id="netBadge"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span id="netCount">0 network requests</span></span>
+    <div class="pop-wrap" id="netWrap">
+      <button type="button" class="lock" id="netBadge" data-pop="p-net" aria-expanded="false" aria-controls="p-net"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span id="netCount">0 resource requests observed</span></button>
+      <div class="pop up net-pop" id="p-net" role="region" aria-labelledby="netHeading" hidden>
+        <h4 id="netHeading">Resource requests observed</h4>
+        <p class="note">Destinations reported by this browser since the page opened. These can include cached resources; a listed resource does not prove data was sent.</p>
+        <p class="net-empty" id="netEmpty">No resource requests observed.</p>
+        <ol class="net-list" id="netList" aria-label="Observed resource requests"></ol>
+        <p class="note">This is not a complete network log. It excludes the initial page load and data/blob URLs, does not show request bodies, and cannot establish who initiated a request. Some cross-origin details are restricted. Use your browser's Network tab for a fuller inspection.</p>
+      </div>
+    </div>
     <span>Drafts stay in this browser</span>
     <div class="pop-wrap">
       <button class="linkbtn" data-pop="p-priv" aria-expanded="false">How privacy works</button>
@@ -525,7 +544,7 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
         <h4>What Inkognito does with your text</h4>
         <ul class="plist">
           <li>Nothing leaves this page. A content security policy blocks every outbound connection, so even a bug could not send your text anywhere.</li>
-          <li>No fonts, scripts, analytics or images load from other servers. The counter on the left shows live proof.</li>
+          <li>Inkognito bundles its fonts, scripts and styles in this file. The counter on the left lets you inspect resource loads reported by your browser, including any visible additions to the hosted page.</li>
           <li>Drafts and settings are saved in this browser's local storage for this address only. Erase them any time.</li>
           <li>The voice check also scans for emails, phone numbers, card numbers, ID numbers, API keys, internal addresses and tracking links before you post. The scan runs on your device.</li>
         </ul>
@@ -1058,12 +1077,14 @@ function buildStatic(){
 }
 
 /* ---------- popovers ---------- */
-function closePops(except){$$('.pop').forEach(function(p){if(p!==except){p.hidden=true;var b=$('[data-pop="'+p.id+'"]');if(b)b.setAttribute('aria-expanded','false')}})}
+var netPinned=false;
+function closePops(except){$$('.pop').forEach(function(p){if(p!==except){p.hidden=true;if(p.id==='p-net')netPinned=false;var b=$('[data-pop="'+p.id+'"]');if(b)b.setAttribute('aria-expanded','false')}})}
+function positionPop(p,t){p.style.left='0px';p.style.right='auto';var r=p.getBoundingClientRect();if(r.right>window.innerWidth-8){p.style.left='auto';p.style.right='0px';r=p.getBoundingClientRect();if(r.left<8){p.style.right='auto';p.style.left=(8-t.getBoundingClientRect().left)+'px'}}}
 document.addEventListener('click',function(e){
   var t=e.target.closest('[data-pop]');
-  if(t){var p=document.getElementById(t.dataset.pop),open=p.hidden;closePops(p);
+  if(t){var p=document.getElementById(t.dataset.pop),open=p.id==='p-net'?!netPinned:p.hidden;closePops(p);if(p.id==='p-net')netPinned=open;
     if(open){if(p.id==='p-fonts')buildStyleGrid();if(p.id==='p-drafts'){saveNow();renderDrafts()}if(p.id==='p-author'){$('#auName').value=profile.name;$('#auHl').value=profile.headline}
-      p.hidden=false;p.style.left='0px';p.style.right='auto';var r=p.getBoundingClientRect();if(r.right>window.innerWidth-8){p.style.left='auto';p.style.right='0px';r=p.getBoundingClientRect();if(r.left<8){p.style.right='auto';p.style.left=(8-t.getBoundingClientRect().left)+'px'}}}
+      p.hidden=false;positionPop(p,t);}
     else p.hidden=true;t.setAttribute('aria-expanded',String(!p.hidden));return}
   if(!e.target.closest('.pop'))closePops();
 });
@@ -1172,13 +1193,40 @@ $('#themeBtn').onclick=function(){prefs.theme=THEMES[(THEMES.indexOf(prefs.theme
 var toastT;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2200)}
 
 /* ---------- privacy footer ---------- */
-var VERSION='1.0.1';
+var VERSION='1.0.2';
 $('#appVer').textContent='v'+VERSION;
-function external(e){var n=e.name||'';return !/^(data|blob|about):/.test(n)}
-function netRefresh(){var n=0;try{n=performance.getEntriesByType('resource').filter(external).length}catch(x){}
-  var b=$('#netBadge');b.classList.toggle('leak',n>0);$('#netCount').textContent=n===0?'0 network requests':n+(n===1?' network request':' network requests')+' (from the page host)'}
-try{new PerformanceObserver(netRefresh).observe({type:'resource',buffered:true})}catch(x){}
-netRefresh();
+var netEntries=[],netSeen=new Set(),netAvailable=false;
+function external(e){return /^https?:/i.test(e.name||'')}
+function netRecord(entries){entries.filter(external).forEach(function(e){
+  var key=JSON.stringify([e.name,e.startTime,e.duration,e.initiatorType]);
+  if(!netSeen.has(key)){netSeen.add(key);netEntries.push(e)}
+});netRender()}
+function netRender(){
+  var n=netEntries.length,b=$('#netBadge');b.classList.toggle('leak',n>0);
+  $('#netCount').textContent=netAvailable?n+(n===1?' resource request observed':' resource requests observed'):'Resource monitoring unavailable';
+  $('#netEmpty').hidden=n>0;
+  $('#netEmpty').textContent=netAvailable?'No resource requests observed.':'This browser does not expose resource timing. Use its Network tab to inspect requests.';
+  var list=$('#netList');
+  netEntries.slice(list.children.length).forEach(function(e){
+    var li=document.createElement('li'),host=document.createElement('strong'),meta=document.createElement('span'),url=document.createElement('code');
+    var parsed;try{parsed=new URL(e.name)}catch(x){}
+    host.textContent=parsed?parsed.host:'Unknown destination';
+    meta.className='net-meta';meta.textContent=(e.initiatorType||'resource')+' · '+(parsed&&parsed.origin===location.origin?'same origin':'other origin');
+    url.textContent=e.name;li.append(host,meta,url);list.appendChild(li);
+  });
+}
+try{netAvailable=typeof performance.getEntriesByType==='function';if(netAvailable)netRecord(performance.getEntriesByType('resource'))}catch(x){netAvailable=false}
+try{new PerformanceObserver(function(list){netAvailable=true;netRecord(list.getEntries())}).observe({type:'resource',buffered:true})}catch(x){
+  if(netAvailable)setInterval(function(){netRecord(performance.getEntriesByType('resource'))},2000);
+}
+netRender();
+var netWrap=$('#netWrap'),netPop=$('#p-net'),netBadge=$('#netBadge'),netCloseTimer;
+function netOpen(){clearTimeout(netCloseTimer);closePops(netPop);netPop.hidden=false;netBadge.setAttribute('aria-expanded','true');positionPop(netPop,netBadge)}
+function netCloseLater(){clearTimeout(netCloseTimer);netCloseTimer=setTimeout(function(){if(!netPinned&&!netWrap.contains(document.activeElement)){netPop.hidden=true;netBadge.setAttribute('aria-expanded','false')}},180)}
+netWrap.addEventListener('pointerenter',function(e){if(e.pointerType==='mouse')netOpen()});
+netWrap.addEventListener('pointerleave',netCloseLater);
+netWrap.addEventListener('focusin',function(e){if(e.target.matches(':focus-visible'))netOpen()});
+netWrap.addEventListener('focusout',netCloseLater);
 $('#wipeBtn').onclick=function(){var b=this;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Tap again to erase every draft and setting';setTimeout(function(){delete b.dataset.arm;b.textContent='Erase all local data'},4000);return}
   try{Object.keys(localStorage).filter(function(k){return k.indexOf('inkognito:')===0}).forEach(function(k){localStorage.removeItem(k)})}catch(x){}
   state.drafts=[{id:uid(),text:'',updated:Date.now()}];state.cur=state.drafts[0].id;ta.value='';onInput(true);clearTimeout(saveT);
