@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.1 · 2026-11-02
+
+- Give the writing area a visible label, stronger light/dark boundary and clear focus state. Keep native vertical resizing bounded to the screen with internal text scrolling.
+- Outline formatting controls and keep long formatting menus inside the viewport, including after resizing the window.
+- Make the fixed-size feed preview scrollable by keyboard, with a visible scrolling hint. Keep the LinkedIn post card, image gallery and original viewer styling unchanged.
+- Add desktop, tablet and phone browser checks for editor boundaries, resizing, highlight alignment, keyboard scrolling and menu overflow.
+
 ## v1.1.0 · 2026-11-02
 
 - Preview up to 20 ordered local images with image descriptions, reorder and remove controls. The first image determines the layout for larger galleries; original files remain unchanged.

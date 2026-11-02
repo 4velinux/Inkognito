@@ -60,7 +60,7 @@ test('image descriptions retain quotes without becoming markup', async () => {
   assert.equal(await page.locator('#cardDesk [data-media-index="0"] img').getAttribute('alt'), 'Architecture "A" <B>');
 });
 test('two images share height while keeping their supported individual aspect ratios', async () => {
-  const boxes = await page.locator('#cardDesk [data-media-index]').evaluateAll(els => els.map(el => ({ width: el.clientWidth, height: el.clientHeight })));
+  const boxes = await page.evaluate(() => Array.from(document.querySelectorAll('#cardDesk [data-media-index]')).map(el => ({ width: el.clientWidth, height: el.clientHeight })));
   // Current order is 1:2 (clamped to4:5) then3:1. Expected width ratio .8/3.
   assert.ok(Math.abs(boxes[0].width / boxes[1].width - .8 / 3) < .02);
 });
@@ -96,17 +96,17 @@ test('gallery orientation, overflow, supported crop and image-free serialization
   assert.equal(await page.locator('#cardDesk [data-media-index]').count(), 5);
   assert.equal(await page.locator('#cardDesk .li-overflow').textContent(), '+15');
   if(process.env.INKOGNITO_SCREENSHOTS) await page.locator('#cardDesk').screenshot({path:path.join(process.env.INKOGNITO_SCREENSHOTS,'inkognito-gallery-desktop.png')});
-  const positions = await page.locator('#cardDesk [data-media-index]').evaluateAll(els => els.map(el => ({x:el.offsetLeft,y:el.offsetTop,w:el.clientWidth,h:el.clientHeight})));
+  const positions = await page.evaluate(() => Array.from(document.querySelectorAll('#cardDesk [data-media-index]')).map(el => ({x:el.offsetLeft,y:el.offsetTop,w:el.clientWidth,h:el.clientHeight})));
   assert.ok(positions[0].w > positions[1].w*2 && positions[1].y > positions[0].y);
   for(const n of [3,4,5]){await page.evaluate(items=>window.mediaTest.setPreviewMedia(items),records.slice(0,n));assert.equal(await page.locator('#cardDesk [data-media-index]').count(),n);}
   assert.equal(await page.evaluate(items => window.mediaTest.setPreviewMedia(items), records.slice(1,4)), true);
   assert.equal(await page.locator('#cardDesk .li-gallery.portrait').count(), 1);
-  const vertical = await page.locator('#cardDesk [data-media-index]').evaluateAll(els => els.map(el => ({x:el.offsetLeft,y:el.offsetTop,w:el.clientWidth,h:el.clientHeight})));
+  const vertical = await page.evaluate(() => Array.from(document.querySelectorAll('#cardDesk [data-media-index]')).map(el => ({x:el.offsetLeft,y:el.offsetTop,w:el.clientWidth,h:el.clientHeight})));
   assert.ok(vertical[0].h > vertical[1].h && vertical[1].x > vertical[0].x);
   for (const [width,height,ratio] of [[100,1000,.8],[1000,100,3],[500,500,1]]) {
     const src='data:image/png;base64,'+(await fixture('ratio.png',width,height)).buffer.toString('base64');
     await page.evaluate(item => window.mediaTest.setPreviewMedia([item]), {...records[0],src,width,height});
-    const box = await page.locator('#cardDesk .li-gallery').evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
+    const box = await page.evaluate(()=>{const rect=document.querySelector('#cardDesk .li-gallery').getBoundingClientRect();return {width:rect.width,height:rect.height};});
     assert.ok(Math.abs(box.width/box.height-ratio)<.01);
   }
   const snapshot = await page.evaluate(() => window.mediaTest.cardHTML('desk','Saved text',true));

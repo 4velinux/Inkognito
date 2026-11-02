@@ -13,7 +13,7 @@ Use an installed Chromium binary (tested with Chrome for Testing 156 and `playwr
 ```bash
 INKOGNITO_PLAYWRIGHT=/tmp/inkognito-media-tests/node_modules/playwright-core \
 INKOGNITO_CHROMIUM=/path/to/chrome \
-node --test tests/media.cjs
+node --test tests/*.cjs
 bash scripts/check.sh
 ```
 
@@ -28,3 +28,5 @@ The functions live inside the existing IIFE. `setPreviewMedia(items)` accepts or
 `openMediaViewer(index)` returns whether the selected index is valid. A document `inkognito:viewer` CustomEvent carries `{open: true}` on activation and `{open: false}` on close. The close notification follows internal state cleanup, so an adapter may restore a temporary inspection selection from that listener. Media replacement preserves the viewer's image identity when present and closes when removed. The host may provide viewport space while keeping the same frame. Saved formatting uses `cardHTML(device, body, true)` to omit transient media. Media updates do not write editor text or browser drafts.
 
 The 3:1 to 4:5 single-image framing and orientation-dependent layout follow [LinkedIn's documented organic-photo behavior](https://www.linkedin.com/help/linkedin/answer/a527229). The five-visible-tile limit, overflow counter, precise multi-image geometry and expanded-view controls remain explicit approximations pending authenticated visual comparison. Two images use a common height and proportional columns, with each image constrained to the supported feed ratio range. The original viewer always retains the original pixels.
+
+`editor-layout.cjs` checks the shared editor at1440px,820px and390px: visible light/dark input boundaries, text/highlight alignment, bounded native resizing, page overflow, keyboard preview scrolling and viewport-contained formatting menus before/after resize. It preserves the fixed555px desktop preview geometry.
