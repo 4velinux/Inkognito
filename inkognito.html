@@ -198,7 +198,22 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
 .li-ell{color:var(--li-muted)}
 .li-more{border:0;background:transparent;color:var(--li-muted);padding:0;font:inherit;cursor:pointer}
 .li-more:hover{color:var(--li-link);text-decoration:underline}
-.li-img{display:block;width:100%;margin-top:8px}
+.li-gallery{display:grid;gap:2px;margin-top:8px;aspect-ratio:var(--media-ratio);overflow:hidden;background:var(--li-line)}
+.li-gallery button{position:relative;border:0;border-radius:0;padding:0;min-width:0;min-height:0;overflow:hidden;background:var(--li-hover);cursor:zoom-in}
+.li-gallery img{display:block;width:100%;height:100%;object-fit:cover}
+.li-gallery button:focus-visible{outline:3px solid var(--li-link);outline-offset:-4px;z-index:1}
+.li-gallery.two{grid-template-columns:minmax(0,var(--media-first)) minmax(0,var(--media-second))}
+.li-gallery.landscape{grid-template-columns:repeat(var(--media-rest),minmax(0,1fr));grid-template-rows:2fr 1fr}
+.li-gallery.landscape button:first-child{grid-column:1/-1}
+.li-gallery.portrait{grid-template-columns:2fr 1fr;grid-template-rows:repeat(var(--media-rest),minmax(0,1fr))}
+.li-gallery.portrait button:first-child{grid-row:1/-1}
+.li-overflow{position:absolute;inset:0;background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;font:600 28px var(--li-font)}
+.media-controls{padding:0 14px 10px;display:grid;gap:6px}
+.media-controls:empty{display:none}
+.media-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:12px}
+.media-row input{min-width:120px;flex:1;border:1px solid var(--line);border-radius:5px;background:var(--panel);padding:4px 6px;color:var(--ink)}
+.media-notice{padding:0 14px;font-size:12px;color:var(--muted)}
+.media-notice:not(:empty){padding-bottom:10px}
 .li-social{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font-size:12px;color:var(--li-muted);gap:8px}
 .reac{display:flex;align-items:center;gap:4px}
 .reac i{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:9px;font-style:normal;margin-right:-6px;box-shadow:0 0 0 1px var(--li-card)}
@@ -211,6 +226,24 @@ body.focus .editor-col{max-width:860px;margin-inline:auto;width:100%}
 .measurers{position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none}
 .measurers .li-text{margin:0}
 .m-desk{width:523px}.m-mob{width:338px}
+
+/* Original image inspection uses the browser modal layer and its focus trap. */
+#mediaViewer{border:1px solid var(--line);border-radius:10px;padding:0;width:min(96vw,1400px);height:min(92vh,1000px);max-width:96vw;max-height:96vh;background:var(--panel);color:var(--ink);overflow:hidden}
+#mediaViewer[open]{display:flex;flex-direction:column}
+#mediaViewer::backdrop{background:rgba(0,0,0,.8)}
+#mediaViewer[data-feed="dark"]{background:#1B1F23;color:rgba(255,255,255,.9);--panel:#1B1F23;--ink:rgba(255,255,255,.9);--muted:rgba(255,255,255,.65);--line:rgba(255,255,255,.25)}
+.viewer-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;border-bottom:1px solid var(--line);flex:none}
+.viewer-tools h2{font-size:14px;margin:0 auto 0 0}
+.viewer-main{display:flex;flex:1;min-height:0;overflow:hidden}
+#viewerPost{font-family:var(--li-font);--li-ink:var(--ink);--li-muted:var(--muted);--li-line:var(--line);width:320px;flex:none;overflow:auto;border-left:1px solid var(--line);background:var(--panel);padding-bottom:12px}
+#viewerPost .li-text{white-space:pre-wrap}
+#viewerPost .li-actions span{flex-direction:column;gap:2px;font-size:11px;padding:6px 8px}
+@media(max-width:640px){.viewer-main{flex-direction:column;overflow:auto}#viewerViewport{height:50vh;min-height:0;flex:none}#viewerPost{width:auto;max-height:30vh;border-left:0;border-top:1px solid var(--line)}}
+#viewerViewport{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:12px}
+#viewerImage{display:block;max-width:100%;max-height:100%;object-fit:contain;flex:none}
+#viewerViewport.zoomed{display:block}
+#viewerViewport.zoomed #viewerImage{max-width:none;max-height:none}
+#viewerDescription{font-size:12px;margin:0;padding:8px 12px;max-height:64px;overflow:auto;flex:none}
 
 /* checks */
 .checks-sum{display:flex;gap:6px;flex-wrap:wrap}
@@ -476,9 +509,9 @@ button.lock:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
         <label class="switch" for="foldLines">Fold after
           <select id="foldLines"><option>2</option><option selected>3</option><option>4</option><option>5</option></select> lines</label>
         <button class="btn sm" id="expandBtn">Expand all</button>
-        <label class="btn sm" for="imgIn">Add image</label>
-        <input type="file" id="imgIn" accept="image/*" hidden>
-        <button class="btn sm" id="imgRm" hidden>Remove image</button>
+        <label class="btn sm" for="imgIn">Add images</label>
+        <input type="file" id="imgIn" accept="image/*" multiple hidden>
+        <button class="btn sm" id="imgRm" hidden>Remove all images</button>
         <div class="pop-wrap">
           <button class="btn sm" data-pop="p-author" aria-expanded="false">Author</button>
           <div class="pop" id="p-author" hidden>
@@ -490,6 +523,8 @@ button.lock:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
           </div>
         </div>
       </div>
+      <div class="media-notice" id="mediaNotice" role="status" aria-live="polite"></div>
+      <div class="media-controls" id="mediaControls" aria-label="Selected images"></div>
       <div class="stage" id="stage" data-feed="light">
         <div class="stage-in">
           <div class="dev desk" id="devDesk">
@@ -566,6 +601,18 @@ button.lock:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
   <div class="li-text m-mob" id="mMob"></div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="mediaViewer" aria-labelledby="viewerTitle" aria-describedby="viewerDescription">
+  <div class="viewer-tools">
+    <h2 id="viewerTitle">Original image</h2><span id="viewerCount" aria-live="polite"></span>
+    <button type="button" class="btn sm" id="viewerPrev" aria-label="Previous image">←</button>
+    <button type="button" class="btn sm" id="viewerNext" aria-label="Next image">→</button>
+    <button type="button" class="btn sm" id="viewerZoom" aria-label="Zoom to original size" aria-pressed="false">Original size</button>
+    <button type="button" class="btn sm" id="viewerClose">Close</button>
+  </div>
+  <div class="viewer-main"><div id="viewerViewport" tabindex="0" aria-label="Image viewport"><img id="viewerImage" alt=""></div><aside id="viewerPost" tabindex="0" aria-label="Post context"></aside></div>
+  <p id="viewerDescription"></p>
+</dialog>
 
 <script>
 (function(){
@@ -742,7 +789,7 @@ function htmlToUnicode(html){
 var MODES={post:{limit:3000,band:[1300,2000]},comment:{limit:1250},headline:{limit:220},about:{limit:2600},invite:{limit:300},article:{limit:150}};
 var prefs=Object.assign({mode:'post',view:'desk',feed:'light',fold:3,hl:true,rich:true,md:true,protect:false,edSize:16,theme:'system',focus:false},store.get('prefs',{}));
 var profile=Object.assign({name:'Pedro Avelino',headline:'AI governance, digital privacy and security in insurance'},store.get('profile',{}));
-var state={drafts:[],cur:null,typing:null,expanded:{desk:false,mob:false},img:null,fold:{desk:-1,mob:-1},foldUnits:{desk:-1,mob:-1},issues:[],cycle:{}};
+var state={drafts:[],cur:null,typing:null,expanded:{desk:false,mob:false},media:[],fold:{desk:-1,mob:-1},foldUnits:{desk:-1,mob:-1},issues:[],cycle:{}};
 
 var B=function(t){return restyle(t,'sansBold')},I=function(t){return restyle(t,'sansItalic')};
 var SAMPLE=B('Huh. Your AI browser just read your inbox.')+'\n\n'+
@@ -775,7 +822,7 @@ function curDraft(){for(var i=0;i<state.drafts.length;i++)if(state.drafts[i].id=
 function draftTitle(t){var l=plain(t||'').split('\n').filter(function(x){return x.trim()})[0]||'Untitled draft';return l.length>54?l.slice(0,54)+'…':l}
 var saveT;function saveSoon(){clearTimeout(saveT);saveT=setTimeout(saveNow,400)}
 function saveNow(){var d=curDraft();if(d){d.text=ta.value;d.updated=Date.now();delete d.sample}store.set('drafts',state.drafts);store.set('cur',state.cur);$('#draftName').textContent=draftTitle(ta.value)}
-function openDraft(id){saveNow();state.cur=id;ta.value=curDraft().text;state.expanded={desk:false,mob:false};onInput(true);renderDrafts();$('#draftName').textContent=draftTitle(ta.value)}
+function openDraft(id){saveNow();if(state.cur!==id){++mediaLoad;closeMediaViewer();setPreviewMedia([])}state.cur=id;ta.value=curDraft().text;state.expanded={desk:false,mob:false};onInput(true);renderDrafts();$('#draftName').textContent=draftTitle(ta.value)}
 function newDraft(text){saveNow();var d={id:uid(),text:text||'',updated:Date.now()};state.drafts.unshift(d);openDraft(d.id);closePops();ta.focus()}
 function ago(t){var s=(Date.now()-t)/1000;if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' h ago';return new Date(t).toLocaleDateString()}
 function renderDrafts(){
@@ -788,7 +835,7 @@ function renderDrafts(){
     o.querySelector('.dm').textContent=(d.sample?'Sample · ':'')+d.text.length.toLocaleString()+' chars · '+ago(d.updated);
     o.onclick=function(){openDraft(d.id);closePops()};
     var del=document.createElement('button');del.className='btn sm ghost';del.type='button';del.textContent='Delete';
-    del.onclick=function(){if(del.dataset.arm){state.drafts=state.drafts.filter(function(x){return x.id!==d.id});if(!state.drafts.length)state.drafts=[{id:uid(),text:'',updated:Date.now()}];if(state.cur===d.id){state.cur=state.drafts[0].id;ta.value=state.drafts[0].text;onInput(true)}store.set('drafts',state.drafts);renderDrafts();toast('Draft deleted')}else{del.dataset.arm='1';del.textContent='Confirm';setTimeout(function(){if(del.isConnected){delete del.dataset.arm;del.textContent='Delete'}},3000)}};
+    del.onclick=function(){if(del.dataset.arm){state.drafts=state.drafts.filter(function(x){return x.id!==d.id});if(!state.drafts.length)state.drafts=[{id:uid(),text:'',updated:Date.now()}];if(state.cur===d.id){++mediaLoad;closeMediaViewer();setPreviewMedia([]);state.cur=state.drafts[0].id;ta.value=state.drafts[0].text;onInput(true)}store.set('drafts',state.drafts);renderDrafts();toast('Draft deleted')}else{del.dataset.arm='1';del.textContent='Confirm';setTimeout(function(){if(del.isConnected){delete del.dataset.arm;del.textContent='Delete'}},3000)}};
     row.appendChild(o);row.appendChild(del);box.appendChild(row);
   });
 }
@@ -850,14 +897,14 @@ var ICON={
  globe:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2 2 2 10.4 0 12.4M8 1.8c-2 2-2 10.4 0 12.4"/></svg>'
 };
 function initials(n){return (n||'?').trim().split(/\s+/).map(function(w){return w[0]}).slice(0,2).join('').toUpperCase()}
-function cardHTML(dev,body){
+function cardHTML(dev,body,excludeMedia){
   var hl=prefs.mode==='headline'?ta.value.replace(/\n/g,' '):profile.headline;
-  return '<div class="li-head"><div class="av">'+esc(initials(profile.name))+'</div><div class="li-who"><div class="li-name">'+esc(profile.name)+' <span>• You</span></div><div class="li-hl">'+esc(hl)+'</div><div class="li-time">2h • '+ICON.globe+'</div></div></div>'+
-  '<div class="li-text" data-dev="'+dev+'">'+body+'</div>'+(state.img?'<img class="li-img" alt="Attached image" src="'+state.img+'">':'')+
-  '<div class="li-social"><span class="reac"><i>👍</i><i>❤️</i><i>💡</i><b>128</b></span><span>24 comments • 6 reposts</span></div>'+
+  return '<div class="li-head"><div class="av">'+esc(initials(profile.name))+'</div><div class="li-who"><div class="li-name">'+esc(profile.name)+' <span>• You</span></div><div class="li-hl">'+esc(hl)+'</div><div class="li-time">Preview • '+ICON.globe+'</div></div></div>'+
+  '<div class="li-text" data-dev="'+dev+'">'+body+'</div>'+(excludeMedia?'':mediaHTML())+
   '<div class="li-actions"><span>'+ICON.like+'Like</span><span>'+ICON.comment+'Comment</span><span>'+ICON.repost+'Repost</span><span>'+ICON.send+'Send</span></div>';
 }
 function renderPreview(){
+  if(viewerState)$('#viewerPost').innerHTML=cardHTML('viewer',rich(ta.value),true);
   var text=prefs.mode==='headline'?'(Headline mode: your text is shown under the name above.)':ta.value.replace(/\s+$/,'');
   var arr=Array.from(text);
   ['desk','mob'].forEach(function(d){
@@ -1177,8 +1224,103 @@ function setFeed(f){prefs.feed=f;store.set('prefs',prefs);$('#stage').dataset.fe
 $$('button[data-feed]').forEach(function(b){b.onclick=function(){setFeed(b.dataset.feed)}});
 $('#expandBtn').onclick=function(){var all=state.expanded.desk&&state.expanded.mob;state.expanded={desk:!all,mob:!all};this.textContent=all?'Expand all':'Collapse all';renderPreview()};
 $('#stage').addEventListener('click',function(e){var m=e.target.closest('.li-more');if(!m)return;var d=m.closest('.li-text').dataset.dev;state.expanded[d]=!m.dataset.less;renderPreview()});
-$('#imgIn').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){state.img=r.result;$('#imgRm').hidden=false;renderPreview()};r.readAsDataURL(f);e.target.value=''};
-$('#imgRm').onclick=function(){state.img=null;this.hidden=true;renderPreview()};
+/* Local pixels are transient. Callers retain ownership of supplied blob URLs. */
+var ownedMediaURLs=new Set(),mediaLoad=0;
+function mediaMessage(message){$('#mediaNotice').textContent=message}
+function mediaAttr(value){return esc(value).replace(/"/g,'&quot;')}
+function mediaHTML(){
+  var items=state.media;if(!items.length)return '';
+  var first=items[0],n=Math.min(items.length,5),kind=items.length===1?'single':items.length===2?'two':first.width>first.height?'landscape':'portrait';
+  var ratio=items.length===1?Math.max(.8,Math.min(3,first.width/first.height)):items.length===2?Math.max(.8,Math.min(3,first.width/first.height))+Math.max(.8,Math.min(3,items[1].width/items[1].height)):1;
+  return '<div class="li-gallery '+kind+'" style="--media-ratio:'+ratio+';--media-first:'+Math.max(.8,Math.min(3,first.width/first.height))+'fr;--media-second:'+(items[1]?Math.max(.8,Math.min(3,items[1].width/items[1].height)):1)+'fr;--media-rest:'+(n-1)+'">'+items.slice(0,n).map(function(item,i){
+    var more=i===n-1&&items.length>n?items.length-n:0;
+    return '<button type="button" data-media-index="'+i+'" data-media-id="'+mediaAttr(item.id)+'" aria-label="Open image '+(i+1)+' of '+items.length+(more?', '+more+' more images':'')+'"><img src="'+mediaAttr(item.src)+'" alt="'+mediaAttr(item.alt)+'">'+(more?'<span class="li-overflow" aria-hidden="true">+'+more+'</span>':'')+'</button>';
+  }).join('')+'</div>';
+}
+function setPreviewMedia(items){
+  var ids=new Set(),total=0,pixels=0;
+  if(!Array.isArray(items)||items.length>20||!items.every(function(x){
+    if(!x||typeof x.id!=='string'||!x.id||x.id.length>256||ids.has(x.id)||typeof x.alt!=='string'||x.alt.length>2000||typeof x.src!=='string'||!(/^(data:image\/[a-z0-9.+-]+;base64,|blob:)/i.test(x.src))||x.src.length>16*1024*1024||!Number.isSafeInteger(x.width)||!Number.isSafeInteger(x.height)||x.width<1||x.height<1||x.width*x.height>40000000)return false;
+    ids.add(x.id);total+=x.src.length;pixels+=x.width*x.height;return total<=64*1024*1024&&pixels<=80000000;
+  })){mediaMessage('Images were not changed. Use up to 20 local images within the size limits.');return false}
+  ++mediaLoad;var closeViewer=false,viewing=viewerState&&state.media[viewerState.index];
+  state.media=items.map(function(x){return {id:x.id,src:x.src,alt:x.alt,width:x.width,height:x.height}});
+  ownedMediaURLs.forEach(function(url){if(!state.media.some(function(x){return x.src===url})){URL.revokeObjectURL(url);ownedMediaURLs.delete(url)}});
+  if(viewing){var index=state.media.findIndex(function(x){return x.id===viewing.id});if(index<0)closeViewer=true;else{viewerState.index=index;renderMediaViewer()}}
+  $('#imgRm').hidden=!items.length;renderMediaControls();renderPreview();if(closeViewer)closeMediaViewer();
+  mediaMessage(items.length?items.length+' image'+(items.length===1?'':'s')+'. Approximate LinkedIn preview. Images stay in memory and are not saved with drafts.':'');
+  return true;
+}
+var viewerState=null;
+function viewerLifecycle(open){document.dispatchEvent(new CustomEvent('inkognito:viewer',{detail:{open:open}}))}
+function openMediaViewer(index){
+  if(!Number.isInteger(index)||index<0||index>=state.media.length)return false;
+  var active=document.activeElement,tile=active&&active.closest('[data-media-index]'),card=tile&&tile.closest('.li-card');
+  if(!viewerState)viewerState={index:index,returnTo:active,returnId:tile?tile.dataset.mediaId:null,returnCard:card?card.id:null};
+  viewerState.index=index;renderMediaViewer();
+  var dialog=$('#mediaViewer');dialog.dataset.feed=$('#stage').dataset.feed;
+  if(!dialog.open){dialog.showModal();$('#viewerClose').focus();viewerLifecycle(true)}
+  return true;
+}
+function renderMediaViewer(){
+  if(!viewerState)return;
+  var item=state.media[viewerState.index],img=$('#viewerImage');
+  img.src=item.src;img.alt=item.alt;img.style.width=item.width+'px';img.style.height=item.height+'px';
+  $('#viewerViewport').classList.remove('zoomed');$('#viewerViewport').scrollTop=0;$('#viewerViewport').scrollLeft=0;
+  $('#viewerZoom').setAttribute('aria-pressed','false');$('#viewerZoom').textContent='Original size';$('#viewerZoom').setAttribute('aria-label','Zoom to original size');
+  $('#viewerCount').textContent=(viewerState.index+1)+' / '+state.media.length;
+  $('#viewerDescription').textContent=item.alt||'No image description provided.';
+  $('#viewerPost').innerHTML=cardHTML('viewer',rich(ta.value),true);
+  $('#viewerPrev').disabled=viewerState.index===0;$('#viewerNext').disabled=viewerState.index===state.media.length-1;
+}
+function closeMediaViewer(){
+  if(!viewerState)return;
+  var previous=viewerState;viewerState=null;
+  var dialog=$('#mediaViewer');if(dialog.open)dialog.close();$('#viewerImage').removeAttribute('src');
+  var target=previous.returnTo;
+  if(previous.returnId&&previous.returnCard){var card=document.getElementById(previous.returnCard);target=card&&Array.from(card.querySelectorAll('[data-media-id]')).find(function(x){return x.dataset.mediaId===previous.returnId})}
+  if(!target||!target.isConnected||target.disabled)target=ta;target.focus();
+  viewerLifecycle(false);
+}
+$('#viewerClose').onclick=closeMediaViewer;
+$('#mediaViewer').addEventListener('cancel',function(e){e.preventDefault();closeMediaViewer()});
+$('#mediaViewer').addEventListener('close',function(){if(!this.open&&viewerState)closeMediaViewer()});
+$('#viewerPrev').onclick=function(){if(viewerState&&viewerState.index>0){viewerState.index--;renderMediaViewer()}};
+$('#viewerNext').onclick=function(){if(viewerState&&viewerState.index<state.media.length-1){viewerState.index++;renderMediaViewer()}};
+$('#viewerZoom').onclick=function(){var on=$('#viewerViewport').classList.toggle('zoomed');this.setAttribute('aria-pressed',String(on));this.textContent=on?'Fit image':'Original size';this.setAttribute('aria-label',on?'Fit image to viewer':'Zoom to original size')};
+$('#mediaViewer').addEventListener('keydown',function(e){if(e.key==='Tab'){var controls=Array.from(this.querySelectorAll('button:not(:disabled),[tabindex="0"]')),first=controls[0],last=controls[controls.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}if(e.key==='ArrowLeft'||e.key==='ArrowRight'){if(e.target.id==='viewerViewport'&&e.target.classList.contains('zoomed'))return;e.preventDefault();$(e.key==='ArrowLeft'?'#viewerPrev':'#viewerNext').click()}});
+$('#viewerImage').onerror=function(){if(viewerState){$('#viewerDescription').textContent='This image is unavailable or could not be decoded.';$('#viewerZoom').disabled=true}};
+$('#viewerImage').onload=function(){$('#viewerZoom').disabled=false};
+$('#stage').addEventListener('click',function(e){var tile=e.target.closest('[data-media-index]');if(tile)openMediaViewer(Number(tile.dataset.mediaIndex))});
+window.addEventListener('pagehide',function(e){if(e.persisted)return;ownedMediaURLs.forEach(function(url){URL.revokeObjectURL(url)});ownedMediaURLs.clear()});
+function renderMediaControls(){
+  var el=$('#mediaControls');el.innerHTML='';
+  state.media.forEach(function(item,i){
+    var row=document.createElement('div');row.className='media-row';
+    var label=document.createElement('label');label.textContent=String(i+1)+'. ';var input=document.createElement('input');input.value=item.alt;input.maxLength=2000;input.setAttribute('aria-label','Image '+(i+1)+' description');
+    input.onchange=function(){var items=state.media.slice();items[i]=Object.assign({},items[i],{alt:input.value});setPreviewMedia(items);$('#mediaControls').children[i].querySelector('input').focus()};label.appendChild(input);row.appendChild(label);
+    [['earlier',-1],['later',1]].forEach(function(move){var b=document.createElement('button');b.type='button';b.className='btn sm';b.textContent=move[1]<0?'↑':'↓';b.setAttribute('aria-label','Move image '+(i+1)+' '+move[0]);b.disabled=i+move[1]<0||i+move[1]>=state.media.length;b.onclick=function(){var items=state.media.slice(),j=i+move[1];items[i]=items[j];items[j]=item;setPreviewMedia(items);var next=$('#mediaControls').children[j].querySelectorAll('button')[move[1]<0?0:1];if(next.disabled)next=$('#mediaControls').children[j].querySelector('input');next.focus()};row.appendChild(b)});
+    var rm=document.createElement('button');rm.type='button';rm.className='btn sm';rm.textContent='Remove';rm.setAttribute('aria-label','Remove image '+(i+1));rm.onclick=function(){setPreviewMedia(state.media.filter(function(x){return x.id!==item.id}));var next=$('#mediaControls').children[Math.min(i,state.media.length-1)];(next?next.querySelector('input'):$('#expandBtn')).focus()};row.appendChild(rm);el.appendChild(row);
+  });
+}
+function decodeLocalImage(file){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(file),image=new Image(),timer=setTimeout(function(){finish(false)},10000),done=false;
+    function finish(ok){if(done)return;done=true;clearTimeout(timer);image.onload=image.onerror=null;if(!ok){URL.revokeObjectURL(url);reject(new Error('An image could not be decoded or exceeds 40 million pixels. Images were not changed.'));return}resolve({id:uid(),src:url,alt:file.name,width:image.naturalWidth,height:image.naturalHeight})}
+    image.onload=function(){finish(image.naturalWidth>0&&image.naturalHeight>0&&image.naturalWidth*image.naturalHeight<=40000000)};image.onerror=function(){finish(false)};image.src=url;
+  });
+}
+$('#imgIn').onchange=function(e){
+  var files=Array.from(e.target.files),token=++mediaLoad;e.target.value='';if(!files.length)return;
+  if(state.media.length+files.length>20||files.some(function(f){return !/^image\//i.test(f.type)||f.size>12*1024*1024})||files.reduce(function(n,f){return n+f.size},0)>48*1024*1024){mediaMessage('Images were not changed. Choose up to 20 images, at most 12 MiB each and 48 MiB per selection.');return}
+  mediaMessage('Loading images…');
+  Promise.all(files.map(function(f){return decodeLocalImage(f).then(function(item){return {item:item}},function(error){return {error:error}})})).then(function(results){
+    var loaded=results.filter(function(r){return r.item}).map(function(r){return r.item}),failed=results.find(function(r){return r.error});
+    if(token!==mediaLoad||failed){loaded.forEach(function(x){URL.revokeObjectURL(x.src)});if(token===mediaLoad)mediaMessage(failed.error.message);return}
+    loaded.forEach(function(x){ownedMediaURLs.add(x.src)});if(!setPreviewMedia(state.media.concat(loaded)))loaded.forEach(function(x){URL.revokeObjectURL(x.src);ownedMediaURLs.delete(x.src)});
+  });
+};
+$('#imgRm').onclick=function(){++mediaLoad;setPreviewMedia([]);$('#expandBtn').focus()};
 $('#authorForm').addEventListener('submit',function(e){e.preventDefault();profile.name=$('#auName').value.trim()||'Your Name';profile.headline=$('#auHl').value.trim();store.set('profile',profile);renderPreview();closePops()});
 function applyEdSize(){document.documentElement.style.setProperty('--ed-size',prefs.edSize+'px')}
 $('#fsDown').onclick=function(){prefs.edSize=Math.max(13,prefs.edSize-1);store.set('prefs',prefs);applyEdSize();renderBackdrop()};
@@ -1193,7 +1335,7 @@ $('#themeBtn').onclick=function(){prefs.theme=THEMES[(THEMES.indexOf(prefs.theme
 var toastT;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2200)}
 
 /* ---------- privacy footer ---------- */
-var VERSION='1.0.2';
+var VERSION='1.1.0';
 $('#appVer').textContent='v'+VERSION;
 var netEntries=[],netSeen=new Set(),netAvailable=false;
 function external(e){return /^https?:/i.test(e.name||'')}
@@ -1229,7 +1371,7 @@ netWrap.addEventListener('focusin',function(e){if(e.target.matches(':focus-visib
 netWrap.addEventListener('focusout',netCloseLater);
 $('#wipeBtn').onclick=function(){var b=this;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='Tap again to erase every draft and setting';setTimeout(function(){delete b.dataset.arm;b.textContent='Erase all local data'},4000);return}
   try{Object.keys(localStorage).filter(function(k){return k.indexOf('inkognito:')===0}).forEach(function(k){localStorage.removeItem(k)})}catch(x){}
-  state.drafts=[{id:uid(),text:'',updated:Date.now()}];state.cur=state.drafts[0].id;ta.value='';onInput(true);clearTimeout(saveT);
+  ++mediaLoad;closeMediaViewer();setPreviewMedia([]);state.drafts=[{id:uid(),text:'',updated:Date.now()}];state.cur=state.drafts[0].id;ta.value='';onInput(true);clearTimeout(saveT);
   try{Object.keys(localStorage).filter(function(k){return k.indexOf('inkognito:')===0}).forEach(function(k){localStorage.removeItem(k)})}catch(x){}
   delete b.dataset.arm;b.textContent='Erase all local data';toast('Everything erased from this browser')};
 /* one-time move of drafts saved under the old name */

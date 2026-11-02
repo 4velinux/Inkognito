@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.0 · 2026-11-02
+
+- Preview up to 20 ordered local images with image descriptions, reorder and remove controls. The first image determines the layout for larger galleries; original files remain unchanged.
+- Open the uncropped original with post context, fit/original-size zoom, previous/next, keyboard navigation and Escape. Closing returns focus and keeps the selected images.
+- Label the feed as an approximate LinkedIn preview. Use neutral preview metadata instead of illustrative engagement counts.
+- Keep image pixels in memory, outside saved drafts and JSON exports. Changing drafts clears transient images; failed or oversized selections preserve the previous gallery.
+- Add shared media/viewer functions and image-free card serialization for embedding without duplicating the gallery. Add synthetic browser regression checks while retaining the offline single-file app.
+
+
 ## v1.0.2 · 2026-09-29
 
 - Inspect browser-observed resource requests from the bottom-left badge. Hover, click, tap or focus the badge to open a scrollable list of destination hosts, URLs, resource types and same-origin/other-origin labels.
