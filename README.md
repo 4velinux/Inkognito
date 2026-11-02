@@ -75,6 +75,9 @@ Talk is cheap, so I checked. On 24 September 2026, I opened the most-used Linked
 **👀 Preview**
 - Desktop (555px) and mobile (390px) feed, side by side, light or dark
 - The "…more" fold, measured on your actual text, not a guess
+- Up to 20 local images with descriptions, reorder/remove controls and an uncropped original viewer
+- First-image-dependent galleries, keyboard navigation and fit/original-size zoom, with post text alongside
+- Approximate LinkedIn photo geometry, not a verified pixel-for-pixel copy of its current interface
 
 **✅ Checks**
 - Character meter for posts, comments, headlines, About, invite notes
@@ -186,6 +189,7 @@ Alpine + lighttpd, non-root, read-only filesystem, zero capabilities.
 
 ## 💡 Good to know
 
+- **Images are temporary.** Image pixels stay in memory and are excluded from saved drafts and JSON exports. Changing drafts clears them. Choose at most 20 images, up to 12 MiB each and 48 MiB per picker selection, with 40 million decoded pixels per image and 80 million across the gallery. Original files are unchanged. Unsupported files or dimensions fail visibly and retain the previous selection.
 - **Drafts are per address.** Disk, `localhost:8765`, and a LAN IP each keep separate drafts. Export/Import moves them.
 - **Copy just works,** even on `file://` and plain `http://`, via an automatic fallback.
 - **Styled letters are Unicode look-alikes**, the same trick every formatter uses. Screen readers spell them out and LinkedIn search skips them, so style a few key phrases, not whole posts.
