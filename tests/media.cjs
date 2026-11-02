@@ -106,7 +106,7 @@ test('gallery orientation, overflow, supported crop and image-free serialization
   for (const [width,height,ratio] of [[100,1000,.8],[1000,100,3],[500,500,1]]) {
     const src='data:image/png;base64,'+(await fixture('ratio.png',width,height)).buffer.toString('base64');
     await page.evaluate(item => window.mediaTest.setPreviewMedia([item]), {...records[0],src,width,height});
-    const box = await page.locator('#cardDesk .li-gallery').boundingBox();
+    const box = await page.locator('#cardDesk .li-gallery').evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
     assert.ok(Math.abs(box.width/box.height-ratio)<.01);
   }
   const snapshot = await page.evaluate(() => window.mediaTest.cardHTML('desk','Saved text',true));
@@ -158,4 +158,92 @@ test('phone dark feed and original viewer stay usable without outbound requests 
   const exported=fs.readFileSync(await download.path(),'utf8'); assert.ok(!/data:image|blob:/.test(exported));
   assert.ok(!/data:image|blob:/.test(await page.evaluate(()=>JSON.stringify({...localStorage}))));
   assert.deepEqual(requests,[]); assert.deepEqual(errors,[]);
+});
+
+async function controlFixtures() {
+  await page.setViewportSize({width:1440,height:1100});
+  await page.locator('[data-view="desk"]').click();
+  const src='data:image/png;base64,'+(await fixture('control.png',60,40)).buffer.toString('base64');
+  await page.evaluate(src=>window.mediaTest.setPreviewMedia([{id:'one',src,alt:'First',width:60,height:40},{id:'two',src,alt:'Second',width:60,height:40}]),src);
+}
+test('editing a description then clicking Remove performs the pending removal', async()=>{
+  await controlFixtures();
+  await page.getByRole('textbox',{name:'Image 1 description',exact:true}).fill('Edited first');
+  await page.getByRole('button',{name:'Remove image 1',exact:true}).click();
+  assert.equal(await page.locator('#cardDesk [data-media-index]').count(),1);
+  assert.equal(await page.locator('#cardDesk [data-media-index] img').getAttribute('alt'),'Second');
+});
+test('editing a description then reordering commits both actions',async()=>{
+  await controlFixtures();
+  await page.getByRole('textbox',{name:'Image 1 description',exact:true}).fill('Edited first');
+  await page.getByRole('button',{name:'Move image 1 later',exact:true}).click();
+  assert.equal(await page.locator('#cardDesk [data-media-index] img').first().getAttribute('alt'),'Second');
+  assert.equal(await page.locator('#cardDesk [data-media-index] img').last().getAttribute('alt'),'Edited first');
+});
+test('Tab after editing an image description advances to the next enabled control',async()=>{
+  await controlFixtures();
+  await page.getByRole('textbox',{name:'Image 1 description',exact:true}).fill('Edited first');
+  await page.keyboard.press('Tab');
+  assert.equal(await page.getByRole('button',{name:'Move image 1 later',exact:true}).evaluate(el=>el===document.activeElement),true);
+});
+test('picker schedules one native decode at a time and stops at the remaining gallery pixel budget',async()=>{
+  await controlFixtures();
+  await page.evaluate(()=>{
+    const src=document.querySelector('#cardDesk img').src;
+    window.mediaTest.setPreviewMedia([{id:'existing',src,alt:'Existing',width:6000,height:6000}]);
+    const NativeImage=window.Image,nativeRevoke=URL.revokeObjectURL;
+    window.decodeProbe={started:[],pending:[],revoked:[],restore(){window.Image=NativeImage;URL.revokeObjectURL=nativeRevoke;this.pending.splice(0).forEach(release=>release());}};
+    URL.revokeObjectURL=function(url){window.decodeProbe.revoked.push(url);return nativeRevoke.call(URL,url);};
+    window.Image=function(){const image=new NativeImage();Object.defineProperties(image,{naturalWidth:{value:6000},naturalHeight:{value:6000},src:{set(url){window.decodeProbe.started.push(url);window.decodeProbe.pending.push(()=>{if(image.onload)image.onload();});}}});return image;};
+  });
+  try{
+    const file=await fixture('budget.png',60,40);
+    await page.locator('#imgIn').setInputFiles(Array.from({length:8},(_,i)=>({...file,name:'budget-'+i+'.png'})));
+    assert.equal(await page.evaluate(()=>window.decodeProbe.started.length),1,'the next decoder cannot start while the first remains pending');
+    await page.evaluate(()=>window.decodeProbe.pending.shift()());
+    await page.waitForFunction(()=>window.decodeProbe.started.length===2);
+    await page.evaluate(()=>window.decodeProbe.pending.shift()());
+    await page.waitForFunction(()=>document.querySelector('#mediaNotice').textContent.includes('80 million'));
+    assert.equal(await page.evaluate(()=>window.decodeProbe.started.length),2,'over-budget second result prevents remaining six decodes');
+    assert.equal(await page.locator('#cardDesk [data-media-index]').getAttribute('data-media-id'),'existing');
+    assert.deepEqual(await page.evaluate(()=>window.decodeProbe.revoked.slice().sort()),await page.evaluate(()=>window.decodeProbe.started.slice().sort()));
+  }finally{await page.evaluate(()=>window.decodeProbe.restore());}
+});
+
+async function controlledSmallDecoder(){
+  await page.evaluate(()=>{
+    const NativeImage=window.Image,nativeRevoke=URL.revokeObjectURL;
+    window.decodeProbe={started:[],pending:[],revoked:[],restore(){window.Image=NativeImage;URL.revokeObjectURL=nativeRevoke;this.pending.splice(0).forEach(release=>release());}};
+    URL.revokeObjectURL=function(url){window.decodeProbe.revoked.push(url);return nativeRevoke.call(URL,url);};
+    window.Image=function(){const image=new NativeImage();Object.defineProperties(image,{naturalWidth:{value:60},naturalHeight:{value:40},src:{set(url){window.decodeProbe.started.push(url);window.decodeProbe.pending.push((ok=true)=>{if(ok){if(image.onload)image.onload();}else if(image.onerror)image.onerror();});}}});return image;};
+  });
+}
+test('cancelled picker stops remaining decodes and revokes every staged URL',async()=>{
+  await controlFixtures(); await controlledSmallDecoder();
+  try{
+    const file=await fixture('cancel.png',60,40);
+    await page.locator('#imgIn').setInputFiles(Array.from({length:3},(_,i)=>({...file,name:'cancel-'+i+'.png'})));
+    await page.evaluate(()=>window.decodeProbe.pending.shift()());
+    await page.waitForFunction(()=>window.decodeProbe.started.length===2);
+    await page.evaluate(()=>{window.mediaTest.setPreviewMedia([]);window.decodeProbe.pending.shift()();});
+    await page.waitForFunction(()=>window.decodeProbe.revoked.length===2);
+    assert.equal(await page.evaluate(()=>window.decodeProbe.started.length),2);
+    assert.equal(await page.locator('#cardDesk [data-media-index]').count(),0);
+    assert.deepEqual(await page.evaluate(()=>window.decodeProbe.revoked.slice().sort()),await page.evaluate(()=>window.decodeProbe.started.slice().sort()));
+  }finally{await page.evaluate(()=>window.decodeProbe.restore());}
+});
+test('failed later decode revokes staged URLs and retains the existing gallery',async()=>{
+  await controlFixtures(); await controlledSmallDecoder();
+  try{
+    const file=await fixture('failure.png',60,40);
+    await page.locator('#imgIn').setInputFiles(Array.from({length:3},(_,i)=>({...file,name:'failure-'+i+'.png'})));
+    await page.evaluate(()=>window.decodeProbe.pending.shift()());
+    await page.waitForFunction(()=>window.decodeProbe.started.length===2);
+    await page.evaluate(()=>window.decodeProbe.pending.shift()(false));
+    await page.waitForFunction(()=>document.querySelector('#mediaNotice').textContent.includes('could not be decoded'));
+    assert.equal(await page.evaluate(()=>window.decodeProbe.started.length),2);
+    assert.equal(await page.locator('#cardDesk [data-media-index]').count(),2);
+    assert.equal(await page.locator('#cardDesk [data-media-index]').first().getAttribute('data-media-id'),'one');
+    assert.deepEqual(await page.evaluate(()=>window.decodeProbe.revoked.slice().sort()),await page.evaluate(()=>window.decodeProbe.started.slice().sort()));
+  }finally{await page.evaluate(()=>window.decodeProbe.restore());}
 });

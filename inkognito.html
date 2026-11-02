@@ -1298,7 +1298,7 @@ function renderMediaControls(){
   state.media.forEach(function(item,i){
     var row=document.createElement('div');row.className='media-row';
     var label=document.createElement('label');label.textContent=String(i+1)+'. ';var input=document.createElement('input');input.value=item.alt;input.maxLength=2000;input.setAttribute('aria-label','Image '+(i+1)+' description');
-    input.onchange=function(){var items=state.media.slice();items[i]=Object.assign({},items[i],{alt:input.value});setPreviewMedia(items);$('#mediaControls').children[i].querySelector('input').focus()};label.appendChild(input);row.appendChild(label);
+    input.oninput=function(){item.alt=input.value.slice(0,2000);renderPreview()};label.appendChild(input);row.appendChild(label);
     [['earlier',-1],['later',1]].forEach(function(move){var b=document.createElement('button');b.type='button';b.className='btn sm';b.textContent=move[1]<0?'↑':'↓';b.setAttribute('aria-label','Move image '+(i+1)+' '+move[0]);b.disabled=i+move[1]<0||i+move[1]>=state.media.length;b.onclick=function(){var items=state.media.slice(),j=i+move[1];items[i]=items[j];items[j]=item;setPreviewMedia(items);var next=$('#mediaControls').children[j].querySelectorAll('button')[move[1]<0?0:1];if(next.disabled)next=$('#mediaControls').children[j].querySelector('input');next.focus()};row.appendChild(b)});
     var rm=document.createElement('button');rm.type='button';rm.className='btn sm';rm.textContent='Remove';rm.setAttribute('aria-label','Remove image '+(i+1));rm.onclick=function(){setPreviewMedia(state.media.filter(function(x){return x.id!==item.id}));var next=$('#mediaControls').children[Math.min(i,state.media.length-1)];(next?next.querySelector('input'):$('#expandBtn')).focus()};row.appendChild(rm);el.appendChild(row);
   });
@@ -1310,15 +1310,23 @@ function decodeLocalImage(file){
     image.onload=function(){finish(image.naturalWidth>0&&image.naturalHeight>0&&image.naturalWidth*image.naturalHeight<=40000000)};image.onerror=function(){finish(false)};image.src=url;
   });
 }
-$('#imgIn').onchange=function(e){
+$('#imgIn').onchange=async function(e){
   var files=Array.from(e.target.files),token=++mediaLoad;e.target.value='';if(!files.length)return;
   if(state.media.length+files.length>20||files.some(function(f){return !/^image\//i.test(f.type)||f.size>12*1024*1024})||files.reduce(function(n,f){return n+f.size},0)>48*1024*1024){mediaMessage('Images were not changed. Choose up to 20 images, at most 12 MiB each and 48 MiB per selection.');return}
   mediaMessage('Loading images…');
-  Promise.all(files.map(function(f){return decodeLocalImage(f).then(function(item){return {item:item}},function(error){return {error:error}})})).then(function(results){
-    var loaded=results.filter(function(r){return r.item}).map(function(r){return r.item}),failed=results.find(function(r){return r.error});
-    if(token!==mediaLoad||failed){loaded.forEach(function(x){URL.revokeObjectURL(x.src)});if(token===mediaLoad)mediaMessage(failed.error.message);return}
-    loaded.forEach(function(x){ownedMediaURLs.add(x.src)});if(!setPreviewMedia(state.media.concat(loaded)))loaded.forEach(function(x){URL.revokeObjectURL(x.src);ownedMediaURLs.delete(x.src)});
-  });
+  var loaded=[],pixels=state.media.reduce(function(n,item){return n+item.width*item.height},0);
+  function releaseStaged(){loaded.forEach(function(item){URL.revokeObjectURL(item.src);ownedMediaURLs.delete(item.src)})}
+  try{
+    for(var i=0;i<files.length;i++){
+      if(token!==mediaLoad)break;
+      var item=await decodeLocalImage(files[i]);loaded.push(item);pixels+=item.width*item.height;
+      if(token!==mediaLoad)break;
+      if(pixels>80000000)throw new Error('The gallery exceeds 80 million decoded pixels. Images were not changed.');
+    }
+    if(token!==mediaLoad){releaseStaged();return}
+    loaded.forEach(function(item){ownedMediaURLs.add(item.src)});
+    if(!setPreviewMedia(state.media.concat(loaded)))releaseStaged();
+  }catch(error){releaseStaged();if(token===mediaLoad)mediaMessage(error.message)}
 };
 $('#imgRm').onclick=function(){++mediaLoad;setPreviewMedia([]);$('#expandBtn').focus()};
 $('#authorForm').addEventListener('submit',function(e){e.preventDefault();profile.name=$('#auName').value.trim()||'Your Name';profile.headline=$('#auHl').value.trim();store.set('profile',profile);renderPreview();closePops()});
