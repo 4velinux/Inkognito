@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.0 · 2026-11-02
+
+- Let embedding hosts supply an optional collection position and receive previous/next events from the existing original viewer. Keep the standalone 20-photo limit and local navigation.
+- Keep a host-loaded replacement image open, reset its zoom to fit and clear external navigation when closing, clearing media or changing drafts.
+- Validate navigation metadata without changing editor text, zoom or browser drafts. Add browser checks for boundaries, keyboard actions, invalid values and reset behavior.
+
 ## v1.1.1 · 2026-11-02
 
 - Give the writing area a visible label, stronger light/dark boundary and clear focus state. Keep native vertical resizing bounded to the screen with internal text scrolling.
