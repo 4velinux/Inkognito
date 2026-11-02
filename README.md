@@ -101,6 +101,10 @@ Prefer the source? `git clone` the repo, open `inkognito.html`. No build step, e
 
 ---
 
+## Embedding
+
+The shared viewer in v1.2.0 supports optional host-controlled navigation for a larger image library while keeping the normal 20-photo post limit. The host supplies one bounded local image at a time; Inkognito keeps its existing fit/zoom, keyboard and close behavior. See the [shared embedding contract](tests/README.md#shared-embedding-contract).
+
 ## 🛠️ Optional: run it as a service
 
 Everything above is the whole product for almost everyone. Only need this if you want Inkognito always-on at a fixed address, reachable from your phone, or auto-updating.

@@ -1262,12 +1262,31 @@ function setPreviewMedia(items){
   ++mediaLoad;var closeViewer=false,viewing=viewerState&&state.media[viewerState.index];
   state.media=items.map(function(x){return {id:x.id,src:x.src,alt:x.alt,width:x.width,height:x.height}});
   ownedMediaURLs.forEach(function(url){if(!state.media.some(function(x){return x.src===url})){URL.revokeObjectURL(url);ownedMediaURLs.delete(url)}});
-  if(viewing){var index=state.media.findIndex(function(x){return x.id===viewing.id});if(index<0)closeViewer=true;else{viewerState.index=index;renderMediaViewer()}}
+  if(!items.length)viewerNavigation=null;
+  if(viewing){var index=state.media.findIndex(function(x){return x.id===viewing.id});if(index<0&&viewerNavigation&&items.length){viewerState.index=0;renderMediaViewer()}else if(index<0)closeViewer=true;else{viewerState.index=index;renderMediaViewer()}}
   $('#imgRm').hidden=!items.length;renderMediaControls();renderPreview();if(closeViewer)closeMediaViewer();
   mediaMessage(items.length?items.length+' image'+(items.length===1?'':'s')+'. Approximate LinkedIn preview. Images stay in memory and are not saved with drafts.':'');
   return true;
 }
-var viewerState=null;
+var viewerState=null,viewerNavigation=null;
+function setMediaViewerNavigation(value){
+  if(value!==null&&(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==2||!Object.prototype.hasOwnProperty.call(value,'position')||!Object.prototype.hasOwnProperty.call(value,'total')||!Number.isSafeInteger(value.position)||!Number.isSafeInteger(value.total)||value.position<0||value.total<1||value.position>=value.total))return false;
+  viewerNavigation=value===null?null:{position:value.position,total:value.total};
+  renderMediaViewerNavigation();return true;
+}
+function renderMediaViewerNavigation(){
+  if(!viewerState)return;
+  var position=viewerNavigation?viewerNavigation.position:viewerState.index,total=viewerNavigation?viewerNavigation.total:state.media.length;
+  $('#viewerCount').textContent=(position+1)+' / '+total;
+  $('#viewerPrev').disabled=position===0;$('#viewerNext').disabled=position===total-1;
+}
+function navigateMediaViewer(direction){
+  if(!viewerState)return;
+  var position=viewerNavigation?viewerNavigation.position:viewerState.index,total=viewerNavigation?viewerNavigation.total:state.media.length;
+  if(position+direction<0||position+direction>=total)return;
+  if(viewerNavigation)document.dispatchEvent(new CustomEvent('inkognito:viewer-navigate',{detail:{direction:direction}}));
+  else{viewerState.index+=direction;renderMediaViewer()}
+}
 function viewerLifecycle(open){document.dispatchEvent(new CustomEvent('inkognito:viewer',{detail:{open:open}}))}
 function openMediaViewer(index){
   if(!Number.isInteger(index)||index<0||index>=state.media.length)return false;
@@ -1284,12 +1303,12 @@ function renderMediaViewer(){
   img.src=item.src;img.alt=item.alt;img.style.width=item.width+'px';img.style.height=item.height+'px';
   $('#viewerViewport').classList.remove('zoomed');$('#viewerViewport').scrollTop=0;$('#viewerViewport').scrollLeft=0;
   $('#viewerZoom').setAttribute('aria-pressed','false');$('#viewerZoom').textContent='Original size';$('#viewerZoom').setAttribute('aria-label','Zoom to original size');
-  $('#viewerCount').textContent=(viewerState.index+1)+' / '+state.media.length;
+  renderMediaViewerNavigation();
   $('#viewerDescription').textContent=item.alt||'No image description provided.';
   $('#viewerPost').innerHTML=cardHTML('viewer',rich(ta.value),true);
-  $('#viewerPrev').disabled=viewerState.index===0;$('#viewerNext').disabled=viewerState.index===state.media.length-1;
 }
 function closeMediaViewer(){
+  viewerNavigation=null;
   if(!viewerState)return;
   var previous=viewerState;viewerState=null;
   var dialog=$('#mediaViewer');if(dialog.open)dialog.close();$('#viewerImage').removeAttribute('src');
@@ -1301,8 +1320,8 @@ function closeMediaViewer(){
 $('#viewerClose').onclick=closeMediaViewer;
 $('#mediaViewer').addEventListener('cancel',function(e){e.preventDefault();closeMediaViewer()});
 $('#mediaViewer').addEventListener('close',function(){if(!this.open&&viewerState)closeMediaViewer()});
-$('#viewerPrev').onclick=function(){if(viewerState&&viewerState.index>0){viewerState.index--;renderMediaViewer()}};
-$('#viewerNext').onclick=function(){if(viewerState&&viewerState.index<state.media.length-1){viewerState.index++;renderMediaViewer()}};
+$('#viewerPrev').onclick=function(){navigateMediaViewer(-1)};
+$('#viewerNext').onclick=function(){navigateMediaViewer(1)};
 $('#viewerZoom').onclick=function(){var on=$('#viewerViewport').classList.toggle('zoomed');this.setAttribute('aria-pressed',String(on));this.textContent=on?'Fit image':'Original size';this.setAttribute('aria-label',on?'Fit image to viewer':'Zoom to original size')};
 $('#mediaViewer').addEventListener('keydown',function(e){if(e.key==='Tab'){var controls=Array.from(this.querySelectorAll('button:not(:disabled),[tabindex="0"]')),first=controls[0],last=controls[controls.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}if(e.key==='ArrowLeft'||e.key==='ArrowRight'){if(e.target.id==='viewerViewport'&&e.target.classList.contains('zoomed'))return;e.preventDefault();$(e.key==='ArrowLeft'?'#viewerPrev':'#viewerNext').click()}});
 $('#viewerImage').onerror=function(){if(viewerState){$('#viewerDescription').textContent='This image is unavailable or could not be decoded.';$('#viewerZoom').disabled=true}};
@@ -1359,7 +1378,7 @@ $('#themeBtn').onclick=function(){prefs.theme=THEMES[(THEMES.indexOf(prefs.theme
 var toastT;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2200)}
 
 /* ---------- privacy footer ---------- */
-var VERSION='1.1.1';
+var VERSION='1.2.0';
 $('#appVer').textContent='v'+VERSION;
 var netEntries=[],netSeen=new Set(),netAvailable=false;
 function external(e){return /^https?:/i.test(e.name||'')}

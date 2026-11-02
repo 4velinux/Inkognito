@@ -16,7 +16,7 @@ before(async () => {
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'inkognito-media-'));
   const source = fs.readFileSync(path.resolve(__dirname, '../inkognito.html'), 'utf8');
   // The dashboard adapter lives inside this same IIFE. Export only its agreed seam in the temporary test copy.
-  const hooked = source.replace("window.addEventListener('beforeunload',saveNow);", "window.addEventListener('beforeunload',saveNow); window.mediaTest={setPreviewMedia,openMediaViewer,cardHTML};");
+  const hooked = source.replace("window.addEventListener('beforeunload',saveNow);", "window.addEventListener('beforeunload',saveNow); window.mediaTest={setPreviewMedia,openMediaViewer,cardHTML,setMediaViewerNavigation:typeof setMediaViewerNavigation==='function'?setMediaViewerNavigation:null};");
   assert.notEqual(hooked, source);
   fs.writeFileSync(path.join(tempDir, 'inkognito.html'), hooked);
   await page.goto('file://' + path.join(tempDir, 'inkognito.html'));
@@ -246,4 +246,82 @@ test('failed later decode revokes staged URLs and retains the existing gallery',
     assert.equal(await page.locator('#cardDesk [data-media-index]').first().getAttribute('data-media-id'),'one');
     assert.deepEqual(await page.evaluate(()=>window.decodeProbe.revoked.slice().sort()),await page.evaluate(()=>window.decodeProbe.started.slice().sort()));
   }finally{await page.evaluate(()=>window.decodeProbe.restore());}
+});
+
+async function externalFixture() {
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({width:1440,height:1100});
+  const src='data:image/png;base64,'+(await fixture('library.png',80,60)).buffer.toString('base64');
+  await page.evaluate(src=>{
+    window.navigationEvents=[];
+    if(!window.navigationListener){window.navigationListener=e=>window.navigationEvents.push(e.detail);document.addEventListener('inkognito:viewer-navigate',window.navigationListener);}
+    window.mediaTest.setPreviewMedia([{id:'library-one',src,alt:'Library one',width:80,height:60}]);
+  },src);
+  assert.equal(await page.evaluate(()=>typeof window.mediaTest.setMediaViewerNavigation),'function');
+}
+test('external count, deliberate navigation and boundaries use host position without local movement',async()=>{
+  await externalFixture();
+  assert.equal(await page.evaluate(()=>window.mediaTest.setMediaViewerNavigation({position:50,total:102})),true);
+  await page.evaluate(()=>window.mediaTest.openMediaViewer(0));
+  assert.equal(await page.locator('#viewerCount').textContent(),'51 / 102');
+  if(process.env.INKOGNITO_SCREENSHOTS)await page.locator('#mediaViewer').screenshot({path:path.join(process.env.INKOGNITO_SCREENSHOTS,'inkognito-external-viewer.png')});
+  await page.locator('#viewerNext').click();await page.keyboard.press('ArrowLeft');
+  assert.deepEqual(await page.evaluate(()=>window.navigationEvents),[{direction:1},{direction:-1}]);
+  assert.equal(await page.locator('#viewerDescription').textContent(),'Library one');
+  await page.evaluate(()=>window.mediaTest.setMediaViewerNavigation({position:0,total:102}));
+  assert.equal(await page.locator('#viewerPrev').isDisabled(),true);
+  await page.keyboard.press('ArrowLeft');
+  await page.evaluate(()=>window.mediaTest.setMediaViewerNavigation({position:101,total:102}));
+  assert.equal(await page.locator('#viewerNext').isDisabled(),true);
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.evaluate(()=>window.navigationEvents.length),2);
+});
+test('navigation validation preserves mode and setter preserves zoom, editor and storage',async()=>{
+  await externalFixture();
+  await page.evaluate(()=>window.mediaTest.setMediaViewerNavigation({position:5,total:30}));
+  await page.evaluate(()=>window.mediaTest.openMediaViewer(0));
+  await page.locator('#viewerZoom').click();
+  await page.evaluate(()=>document.querySelector('#ta').setSelectionRange(1,4));
+  const before=await page.evaluate(()=>({text:document.querySelector('#ta').value,selection:[document.querySelector('#ta').selectionStart,document.querySelector('#ta').selectionEnd],storage:JSON.stringify(localStorage)}));
+  for(const value of [undefined,{},[],{position:0,total:0},{position:-1,total:10},{position:10,total:10},{position:0.5,total:10},{position:0,total:'10'},{position:0,total:Infinity},{position:0,total:9007199254740992},{position:1,total:10,extra:true}]){
+    assert.equal(await page.evaluate(value=>window.mediaTest.setMediaViewerNavigation(value),value),false);
+    assert.equal(await page.locator('#viewerCount').textContent(),'6 / 30');
+  }
+  assert.equal(await page.evaluate(()=>window.mediaTest.setMediaViewerNavigation({position:6,total:30})),true);
+  assert.equal(await page.locator('#viewerZoom').getAttribute('aria-pressed'),'true');
+  assert.deepEqual(await page.evaluate(()=>({text:document.querySelector('#ta').value,selection:[document.querySelector('#ta').selectionStart,document.querySelector('#ta').selectionEnd],storage:JSON.stringify(localStorage)})),before);
+  assert.deepEqual(await page.evaluate(()=>window.navigationEvents),[]);
+});
+test('external media replacement stays open, resets fit and null restores local navigation',async()=>{
+  await externalFixture();
+  await page.evaluate(()=>{window.mediaTest.setMediaViewerNavigation({position:0,total:50});window.mediaTest.openMediaViewer(0)});
+  await page.locator('#viewerZoom').click();
+  await page.evaluate(()=>{const src=document.querySelector('#viewerImage').src;window.mediaTest.setPreviewMedia([{id:'library-two',src,alt:'Library two',width:80,height:60}]);window.mediaTest.setMediaViewerNavigation({position:1,total:50})});
+  assert.equal(await page.locator('#mediaViewer[open]').count(),1);
+  assert.equal(await page.locator('#viewerDescription').textContent(),'Library two');
+  assert.equal(await page.locator('#viewerZoom').getAttribute('aria-pressed'),'false');
+  assert.equal(await page.locator('#viewerCount').textContent(),'2 / 50');
+  await page.evaluate(()=>window.mediaTest.setMediaViewerNavigation(null));
+  assert.equal(await page.locator('#viewerCount').textContent(),'1 / 1');
+  assert.equal(await page.locator('#viewerNext').isDisabled(),true);
+});
+test('closing, clearing and changing drafts reset external mode while local gallery stays capped at 20',async()=>{
+  await externalFixture();
+  for(const reset of ['close','clear','draft']){
+    await page.evaluate(()=>{window.mediaTest.setMediaViewerNavigation({position:3,total:40});window.mediaTest.openMediaViewer(0)});
+    if(reset==='close')await page.keyboard.press('Escape');
+    if(reset==='clear')await page.evaluate(()=>window.mediaTest.setPreviewMedia([]));
+    if(reset==='draft'){await page.keyboard.press('Escape');await page.evaluate(()=>window.mediaTest.setMediaViewerNavigation({position:3,total:40}));await page.locator('[data-pop="p-drafts"]').click();await page.locator('#dNew').click();}
+    const src='data:image/png;base64,'+(await fixture('local.png',80,60)).buffer.toString('base64');
+    await page.evaluate(src=>{window.mediaTest.setPreviewMedia([{id:'local',src,alt:'Local',width:80,height:60}]);window.mediaTest.openMediaViewer(0)},src);
+    assert.equal(await page.locator('#viewerCount').textContent(),'1 / 1');await page.keyboard.press('Escape');
+  }
+  const src='data:image/png;base64,'+(await fixture('twenty.png',80,60)).buffer.toString('base64');
+  assert.equal(await page.evaluate(src=>window.mediaTest.setPreviewMedia(Array.from({length:20},(_,i)=>({id:String(i),src,alt:String(i),width:80,height:60}))),src),true);
+  await page.evaluate(()=>window.mediaTest.openMediaViewer(0));await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('#viewerCount').textContent(),'2 / 20');
+  assert.equal(await page.evaluate(src=>window.mediaTest.setPreviewMedia(Array.from({length:21},(_,i)=>({id:String(i),src,alt:'',width:80,height:60}))),src),false);
+  assert.equal(await page.locator('#viewerCount').textContent(),'2 / 20');await page.keyboard.press('Escape');
+  assert.deepEqual(requests,[]);assert.deepEqual(errors,[]);
+  assert.ok(!/data:image|blob:/.test(await page.evaluate(()=>JSON.stringify({...localStorage}))));
 });
