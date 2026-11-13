@@ -1,4 +1,4 @@
-# Inkognito — project notes for Claude
+# Inkognito — project notes for AI coding agents
 
 Read this before making changes. It captures conventions, known gotchas, and
 the state of things as of v1.0.1, so a fresh session doesn't have to
