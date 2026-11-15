@@ -38,6 +38,8 @@ jobs:
           mkdir -p _site
           cp inkognito.html _site/index.html
           cp inkognito.html _site/inkognito.html
+          # Link-preview image referenced by the page's og:image tag.
+          cp docs/screenshot.png _site/og.png
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:

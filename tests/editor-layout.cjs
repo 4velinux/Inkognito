@@ -76,3 +76,32 @@ test('dark editor fields keep visible boundaries and focus without changing feed
     if(process.env.INKOGNITO_SCREENSHOTS)await page.screenshot({path:path.join(process.env.INKOGNITO_SCREENSHOTS,'inkognito-editor-dark-820.png'),fullPage:true});
   }finally{await page.close();}
 });
+test('first-visit introduction dismisses, stays dismissed and reopens from the footer',async()=>{
+  const page=await open(1440,900);
+  try{
+    assert.equal(await page.locator('#welcome').isVisible(),true,'a first visit explains what the page is');
+    assert.ok((await page.locator('#welcome a[href*="releases/latest/download/inkognito.html"]').count())===1,'the introduction offers the single-file download');
+    await page.locator('#welcomeStart').click();
+    assert.equal(await page.locator('#welcome').isVisible(),false);
+    assert.equal(await page.locator('#ta').evaluate(el=>el===document.activeElement),true,'dismissing moves focus to the editor');
+    await page.reload();
+    assert.equal(await page.locator('#welcome').isVisible(),false,'the introduction stays dismissed');
+    await page.locator('#aboutBtn').click();
+    assert.equal(await page.locator('#welcome').isVisible(),true,'the footer link reopens it');
+    for(const width of [390,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`the introduction does not widen the page at ${width}px`);}
+    assert.equal(await page.locator('#copyTop').isVisible(),true,'the main copy action stays in the header');
+  }finally{await page.close();}
+});
+for(const width of [1440,390])test(`top bar Help explains drafts, templates and shortcuts at ${width}px`,async()=>{
+  const page=await open(width,800);
+  try{
+    await page.locator('[data-pop="p-guide"]').click();
+    const text=await page.locator('#p-guide').innerText();
+    for(const word of ['DRAFTS','TEMPLATES','KEYBOARD SHORTCUTS','suggestions','Ctrl/⌘ Enter'])assert.ok(text.includes(word),`help mentions ${word}`);
+    const box=await page.locator('#p-guide').boundingBox();
+    assert.ok(box.x>=0&&box.x+box.width<=width&&box.y+box.height<=800,'the help menu stays inside the viewport');
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'the page does not scroll sideways');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#p-guide').isVisible(),false);
+  }finally{await page.close();}
+});

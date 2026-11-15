@@ -97,7 +97,9 @@ welcome.
 - `docs/screenshot.png` — README hero image. Regenerate with Playwright
   (`chromium.launch()`, load `file://.../inkognito.html`, viewport
   1800x1125 @ deviceScaleFactor 1.2 for the existing 2160x1350 size)
-  whenever the header/toolbar UI changes, so it doesn't go stale.
+  whenever the header/toolbar UI changes, so it doesn't go stale. The
+  Cloudflare deploy also publishes it as `/og.png`, the link-preview image
+  named in the page's `og:image` tag.
 - `scripts/check.sh` — the privacy guard, described above.
 
 ## Known gaps / untested paths

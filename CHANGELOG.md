@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.0.0 · 2026-11-16
+
+- Greet first-time visitors with a short introduction: what Inkognito is, the zero-request guarantee, and a direct link to download the single file. It closes for good with one click, never shows inside an embedding frame, and reopens from "About and download" in the footer.
+- Keep "Copy for LinkedIn" in the sticky header so the main action is always one click away. Both copy buttons confirm with "Copied ✓".
+- Add a Help menu to the top bar explaining local drafts, templates as optional starting points, and the keyboard shortcuts.
+- Refresh the look: brand gradient accent, softer depth behind the panels, a translucent header, gradient primary buttons and clearer hover states. Layout, editor boundaries and the LinkedIn preview geometry are unchanged.
+- Shorten the header on phones: the byline and "Theme:" label fold away and the copy button moves next to the logo.
+- Add a descriptive page title and link-preview metadata, so sharing inkognito.a-eye.cloud on LinkedIn shows a title, summary and screenshot. The metadata is text only; the page still loads nothing from any server.
+- Still one self-contained HTML file with the same content security policy.
+
 ## v1.2.0 · 2026-11-02
 
 - Let embedding hosts supply an optional collection position and receive previous/next events from the existing original viewer. Keep the standalone 20-photo limit and local navigation.
