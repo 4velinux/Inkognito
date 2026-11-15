@@ -7,7 +7,7 @@
 - Add a Help menu to the top bar explaining local drafts, templates as optional starting points, and the keyboard shortcuts.
 - Refresh the look: brand gradient accent, softer depth behind the panels, a translucent header, gradient primary buttons and clearer hover states. Layout, editor boundaries and the LinkedIn preview geometry are unchanged.
 - Shorten the header on phones: the byline and "Theme:" label fold away and the copy button moves next to the logo.
-- Add a descriptive page title and link-preview metadata, so sharing inkognito.a-eye.cloud on LinkedIn shows a title, summary and screenshot. The metadata is text only; the page still loads nothing from any server.
+- Add link-preview metadata, so sharing inkognito.a-eye.cloud on LinkedIn shows a title, summary and screenshot. The metadata is text only; the page still loads nothing from any server.
 - Still one self-contained HTML file with the same content security policy.
 
 ## v1.2.0 · 2026-11-02
